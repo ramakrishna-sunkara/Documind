@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme -->
+    <style name="Theme.Documind" parent="android:Theme.Material.NoActionBar">
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/surface_dark</item>
+        <item name="android:navigationBarColor">@color/surface_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Window background -->
+        <item name="android:windowBackground">@color/surface_dark</item>
+    </style>
+    
+    <!-- Splash screen theme for Android 12+ (Dark) -->
+    <style name="Theme.Documind.Splash" parent="Theme.Documind">
+        <item name="android:windowSplashScreenBackground">@color/surface_dark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    </style>
+</resources>

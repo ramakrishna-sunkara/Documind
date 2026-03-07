@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.documind.app.data.analytics.AnalyticsManager
 import com.documind.app.data.llm.LocalLLMManager
 import com.documind.app.data.llm.ModelState
 import com.documind.app.data.llm.ModelStatusManager
@@ -45,12 +46,16 @@ class DocuMindViewModel(
     private val _currentDocument = MutableStateFlow<DocumentContent?>(null)
     val currentDocument: StateFlow<DocumentContent?> = _currentDocument.asStateFlow()
     
+    private var modelInitStartTime = 0L
+    private var queryStartTime = 0L
+    
     init {
         checkModelAndInitialize()
     }
     
     private fun checkModelAndInitialize() {
         viewModelScope.launch {
+            modelInitStartTime = System.currentTimeMillis()
             modelStatusManager.checkModelStatus()
             
             modelStatusManager.modelState.collect { state ->
@@ -59,6 +64,7 @@ class DocuMindViewModel(
                         initializeLLM()
                     }
                     is ModelState.Error -> {
+                        AnalyticsManager.logModelInitFailed(state.message)
                         _currentScreen.value = UiScreen.Loading
                     }
                     else -> {
@@ -75,10 +81,13 @@ class DocuMindViewModel(
             if (modelPath != null) {
                 llmManager.initialize(modelPath).fold(
                     onSuccess = {
+                        val duration = System.currentTimeMillis() - modelInitStartTime
+                        AnalyticsManager.logModelInitialized(duration)
+                        AnalyticsManager.logScreenView("Home")
                         _currentScreen.value = UiScreen.Home
                     },
-                    onFailure = {
-                        // Stay on loading screen with error
+                    onFailure = { error ->
+                        AnalyticsManager.logModelInitFailed(error.message ?: "Unknown error")
                     }
                 )
             }
@@ -94,9 +103,12 @@ class DocuMindViewModel(
                     handleExtractionSuccess(document)
                 },
                 onFailure = { error ->
-                    _extractionState.value = ExtractionState.Error(
-                        error.message ?: "Failed to extract PDF"
+                    val errorMsg = error.message ?: "Failed to extract PDF"
+                    AnalyticsManager.logDocumentExtractionFailed(
+                        com.documind.app.data.extractor.SourceType.PDF, 
+                        errorMsg
                     )
+                    _extractionState.value = ExtractionState.Error(errorMsg)
                 }
             )
         }
@@ -111,9 +123,12 @@ class DocuMindViewModel(
                     handleExtractionSuccess(document)
                 },
                 onFailure = { error ->
-                    _extractionState.value = ExtractionState.Error(
-                        error.message ?: "Failed to extract Word document"
+                    val errorMsg = error.message ?: "Failed to extract Word document"
+                    AnalyticsManager.logDocumentExtractionFailed(
+                        com.documind.app.data.extractor.SourceType.DOCX, 
+                        errorMsg
                     )
+                    _extractionState.value = ExtractionState.Error(errorMsg)
                 }
             )
         }
@@ -128,9 +143,12 @@ class DocuMindViewModel(
                     handleExtractionSuccess(document)
                 },
                 onFailure = { error ->
-                    _extractionState.value = ExtractionState.Error(
-                        error.message ?: "Failed to extract URL content"
+                    val errorMsg = error.message ?: "Failed to extract URL content"
+                    AnalyticsManager.logDocumentExtractionFailed(
+                        com.documind.app.data.extractor.SourceType.URL, 
+                        errorMsg
                     )
+                    _extractionState.value = ExtractionState.Error(errorMsg)
                 }
             )
         }
@@ -144,9 +162,12 @@ class DocuMindViewModel(
                 handleExtractionSuccess(document)
             },
             onFailure = { error ->
-                _extractionState.value = ExtractionState.Error(
-                    error.message ?: "Invalid text input"
+                val errorMsg = error.message ?: "Invalid text input"
+                AnalyticsManager.logDocumentExtractionFailed(
+                    com.documind.app.data.extractor.SourceType.TEXT, 
+                    errorMsg
                 )
+                _extractionState.value = ExtractionState.Error(errorMsg)
             }
         )
     }
@@ -156,6 +177,13 @@ class DocuMindViewModel(
         _extractionState.value = ExtractionState.Success(document)
         _currentScreen.value = UiScreen.Chat
         _messages.value = emptyList()
+        
+        AnalyticsManager.logDocumentLoaded(
+            sourceType = document.sourceType,
+            wordCount = document.wordCount,
+            isLarge = document.isLargeDocument
+        )
+        AnalyticsManager.logScreenView("Chat")
     }
     
     fun sendQuery(query: String) {
@@ -165,16 +193,20 @@ class DocuMindViewModel(
             val userMessage = ChatMessage(content = query, isUser = true)
             _messages.value = _messages.value + userMessage
             
+            AnalyticsManager.logQuerySent(query.length)
+            
             if (!llmManager.isReady()) {
                 val errorMessage = ChatMessage(
                     content = "AI model is not loaded. Please download the Gemma model file and restart the app to enable AI responses.",
                     isUser = false
                 )
                 _messages.value = _messages.value + errorMessage
+                AnalyticsManager.logQueryFailed("Model not loaded")
                 return@launch
             }
             
             _queryState.value = QueryState.Processing
+            queryStartTime = System.currentTimeMillis()
             
             val loadingMessage = ChatMessage(
                 content = "",
@@ -185,17 +217,23 @@ class DocuMindViewModel(
             
             processQueryUseCase.process(document, query).fold(
                 onSuccess = { response ->
+                    val duration = System.currentTimeMillis() - queryStartTime
                     val aiMessage = ChatMessage(content = response, isUser = false)
                     _messages.value = _messages.value.dropLast(1) + aiMessage
                     _queryState.value = QueryState.Idle
+                    
+                    AnalyticsManager.logQueryResponseReceived(response.length, duration)
                 },
                 onFailure = { error ->
+                    val errorMsg = error.message ?: "Failed to generate response"
                     val errorMessage = ChatMessage(
-                        content = "Error: ${error.message ?: "Failed to generate response"}",
+                        content = "Error: $errorMsg",
                         isUser = false
                     )
                     _messages.value = _messages.value.dropLast(1) + errorMessage
-                    _queryState.value = QueryState.Error(error.message ?: "Unknown error")
+                    _queryState.value = QueryState.Error(errorMsg)
+                    
+                    AnalyticsManager.logQueryFailed(errorMsg)
                 }
             )
         }
@@ -207,6 +245,9 @@ class DocuMindViewModel(
         _extractionState.value = ExtractionState.Idle
         _queryState.value = QueryState.Idle
         _currentScreen.value = UiScreen.Home
+        
+        AnalyticsManager.logDocumentCleared()
+        AnalyticsManager.logScreenView("Home")
     }
     
     fun dismissExtractionError() {
@@ -215,6 +256,8 @@ class DocuMindViewModel(
     
     fun skipModelLoading() {
         _currentScreen.value = UiScreen.Home
+        AnalyticsManager.logModelSkipped()
+        AnalyticsManager.logScreenView("Home")
     }
     
     override fun onCleared() {

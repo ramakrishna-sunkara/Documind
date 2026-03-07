@@ -9,10 +9,6 @@ class ProcessQueryUseCase(
     private val textProcessor: TextProcessor = TextProcessor()
 ) {
     
-    companion object {
-        private const val MAX_CONTEXT_LENGTH = 4000
-    }
-    
     suspend fun process(
         document: DocumentContent,
         query: String
@@ -25,9 +21,10 @@ class ProcessQueryUseCase(
             return Result.failure(IllegalArgumentException("Query cannot be empty"))
         }
         
+        // Use the max context from LocalLLMManager to stay within token limits
         val context = textProcessor.buildContextForQuery(
             chunks = document.chunks,
-            maxContextLength = MAX_CONTEXT_LENGTH
+            maxContextLength = LocalLLMManager.MAX_CONTEXT_CHARS
         )
         
         return llmManager.generateResponse(

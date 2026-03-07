@@ -15,6 +15,7 @@ import java.io.File
 sealed class ModelState {
     data object Idle : ModelState()
     data class Downloading(val progress: Int) : ModelState()
+    data object WaitingForWifi : ModelState()
     data object Ready : ModelState()
     data class Error(val message: String) : ModelState()
 }
@@ -138,6 +139,10 @@ class ModelStatusManager(private val context: Context) {
             }
             AssetPackStatus.TRANSFERRING -> {
                 _modelState.value = ModelState.Downloading(99)
+            }
+            AssetPackStatus.WAITING_FOR_WIFI -> {
+                _modelState.value = ModelState.WaitingForWifi
+                Log.d(TAG, "Waiting for WiFi to download model")
             }
             AssetPackStatus.COMPLETED -> {
                 val packLocation = assetPackManager.getPackLocation(MODEL_PACK_NAME)

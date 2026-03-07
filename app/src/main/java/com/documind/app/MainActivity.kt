@@ -4,14 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.documind.app.data.update.InAppUpdateManager
+import com.documind.app.data.update.UpdateState
 import com.documind.app.domain.model.UiScreen
 import com.documind.app.ui.screens.ChatScreen
 import com.documind.app.ui.screens.HomeScreen
@@ -20,19 +30,47 @@ import com.documind.app.ui.theme.DocumindTheme
 import com.documind.app.ui.viewmodel.DocuMindViewModel
 
 class MainActivity : ComponentActivity() {
+    
+    private lateinit var inAppUpdateManager: InAppUpdateManager
+    
+    private val updateLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        inAppUpdateManager.handleUpdateResult(result.resultCode)
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize In-App Update Manager
+        inAppUpdateManager = InAppUpdateManager(this)
+        inAppUpdateManager.setUpdateLauncher(updateLauncher)
+
         enableEdgeToEdge()
         setContent {
             DocumindTheme {
-                DocuMindMainContent()
+                DocuMindMainContent(inAppUpdateManager)
             }
         }
+        
+        // Check for updates when app starts
+        inAppUpdateManager.checkForUpdate()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Resume any pending updates
+        inAppUpdateManager.resumeUpdate()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        inAppUpdateManager.cleanup()
     }
 }
 
 @Composable
-fun DocuMindMainContent() {
+fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager) {
     val viewModel: DocuMindViewModel = viewModel(
         factory = DocuMindViewModel.Factory(
             androidx.compose.ui.platform.LocalContext.current.applicationContext
@@ -46,7 +84,30 @@ fun DocuMindMainContent() {
     val queryState by viewModel.queryState.collectAsState()
     val currentDocument by viewModel.currentDocument.collectAsState()
     
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    // Update state
+    val updateState by inAppUpdateManager.updateState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Show snackbar when update is ready to install
+    LaunchedEffect(updateState) {
+        if (updateState is UpdateState.ReadyToInstall) {
+            val result = snackbarHostState.showSnackbar(
+                message = "Update downloaded! Restart to apply.",
+                actionLabel = "RESTART",
+                duration = SnackbarDuration.Indefinite
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                inAppUpdateManager.completeUpdate()
+            }
+        }
+    }
+    
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
+    ) { innerPadding ->
         when (currentScreen) {
             is UiScreen.Loading -> {
                 LoadingScreen(

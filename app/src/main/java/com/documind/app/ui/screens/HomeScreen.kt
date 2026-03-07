@@ -52,11 +52,15 @@ import androidx.compose.ui.unit.sp
 import com.documind.app.domain.model.ExtractionState
 import com.documind.app.ui.components.SourceCard
 import com.documind.app.ui.components.SourceCardColors
+import com.documind.app.ui.components.SupportBottomSheet
+import com.documind.app.ui.components.SupportButton
 import com.documind.app.ui.theme.GradientEnd
 import com.documind.app.ui.theme.GradientMiddle
 import com.documind.app.ui.theme.GradientStart
 import com.documind.app.ui.theme.OfflineBadge
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     extractionState: ExtractionState,
@@ -70,6 +74,7 @@ fun HomeScreen(
     val context = LocalContext.current
     var showUrlDialog by remember { mutableStateOf(false) }
     var showTextDialog by remember { mutableStateOf(false) }
+    var showSupportSheet by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var textInput by remember { mutableStateOf("") }
     
@@ -110,9 +115,19 @@ fun HomeScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            OfflineBadge()
+            // Header with Offline badge and Support button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OfflineBadge()
+                SupportButton(onClick = { showSupportSheet = true })
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
             
             Spacer(modifier = Modifier.height(32.dp))
             
@@ -364,6 +379,13 @@ fun HomeScreen(
                     Text("OK", fontWeight = FontWeight.SemiBold)
                 }
             }
+        )
+    }
+    
+    // Support/Donate bottom sheet
+    if (showSupportSheet) {
+        SupportBottomSheet(
+            onDismiss = { showSupportSheet = false }
         )
     }
 }

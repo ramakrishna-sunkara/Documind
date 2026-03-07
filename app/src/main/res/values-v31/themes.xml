@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (API 31) specific theme with splash screen API -->
 <resources>
-    <!-- Base application theme -->
     <style name="Theme.Documind" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- Status bar color -->
+        <!-- Status bar -->
         <item name="android:statusBarColor">@color/surface_light</item>
         <item name="android:navigationBarColor">@color/surface_light</item>
         <item name="android:windowLightStatusBar">true</item>
         
         <!-- Window background -->
         <item name="android:windowBackground">@color/surface_light</item>
-    </style>
-    
-    <!-- Splash screen theme for Android 12+ -->
-    <style name="Theme.Documind.Splash" parent="Theme.Documind">
+        
+        <!-- Splash Screen API (Android 12+) -->
         <item name="android:windowSplashScreenBackground">@color/primary</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenAnimationDuration">500</item>
     </style>
 </resources>

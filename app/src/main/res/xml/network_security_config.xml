@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+    DocuMind Network Security Configuration
+    
+    This app primarily works offline. Network access is only used for:
+    1. URL content extraction (user-initiated)
+    
+    All document processing and AI inference happens on-device.
+    -->
+    
+    <!-- Default configuration for all domains -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust only system CAs -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- 
+    Debug configuration (only applies to debug builds)
+    Allows user-installed CA certificates for testing with tools like Charles Proxy
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

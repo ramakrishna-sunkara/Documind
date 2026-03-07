@@ -1,3 +1,136 @@
 <resources>
-    <string name="app_name">Documind</string>
+    <!-- App Identity -->
+    <string name="app_name">DocuMind</string>
+    <string name="app_tagline">Your AI Reading Assistant</string>
+    <string name="app_description">Privacy-first AI assistant. Read and analyze documents offline.</string>
+    
+    <!-- Loading Screen -->
+    <string name="loading_initializing">Initializing…</string>
+    <string name="loading_ai_model">Loading AI Model…</string>
+    <string name="loading_ready">Ready to Go!</string>
+    <string name="loading_error_title">AI Model Not Available</string>
+    <string name="loading_continue_without_ai">Continue Without AI</string>
+    <string name="loading_extraction_only_note">Document extraction will still work</string>
+    
+    <!-- Offline Badge -->
+    <string name="offline_badge">Works Offline</string>
+    <string name="offline_badge_full">Works 100% Offline</string>
+    <string name="offline_mode">Offline Mode</string>
+    
+    <!-- Home Screen -->
+    <string name="home_select_source">Select a document source to begin</string>
+    <string name="source_pdf">PDF</string>
+    <string name="source_word">Word</string>
+    <string name="source_url">URL</string>
+    <string name="source_text">Text</string>
+    
+    <!-- Privacy Note -->
+    <string name="privacy_title">Your Privacy, Protected</string>
+    <string name="privacy_description">All processing happens on your device. Your documents never leave your phone.</string>
+    
+    <!-- URL Dialog -->
+    <string name="dialog_url_title">Enter URL</string>
+    <string name="dialog_url_label">Website URL</string>
+    <string name="dialog_url_placeholder">https://example.com/article</string>
+    <string name="dialog_url_extract">Extract</string>
+    
+    <!-- Text Dialog -->
+    <string name="dialog_text_title">Paste Text</string>
+    <string name="dialog_text_label">Document text</string>
+    <string name="dialog_text_placeholder">Paste your text here…</string>
+    <string name="dialog_text_load">Load</string>
+    
+    <!-- Common Actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_send">Send</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_back">Back</string>
+    
+    <!-- Chat Screen -->
+    <string name="chat_empty_title">Ready to Answer</string>
+    <string name="chat_empty_description">Ask any question about your document.\nI\'ll find the answer for you.</string>
+    <string name="chat_input_placeholder">Ask about the document…</string>
+    <string name="chat_try_asking">Try asking:</string>
+    <string name="chat_suggestion_1">"What is the main topic?"</string>
+    <string name="chat_suggestion_2">"Summarize this document"</string>
+    <string name="chat_suggestion_3">"What are the key points?"</string>
+    <string name="chat_ai_name">DocuMind</string>
+    
+    <!-- Document Status -->
+    <string name="doc_status_words">%s words</string>
+    <string name="doc_status_large">Large</string>
+    <string name="doc_type_pdf">PDF</string>
+    <string name="doc_type_word">Word</string>
+    <string name="doc_type_web">Web</string>
+    <string name="doc_type_text">Text</string>
+    
+    <!-- Extraction -->
+    <string name="extracting_content">Extracting content…</string>
+    <string name="extraction_error_title">Extraction Error</string>
+    <string name="extraction_error_pdf">Failed to open PDF</string>
+    <string name="extraction_error_docx">Failed to open Word document</string>
+    <string name="extraction_error_url">Failed to fetch URL content</string>
+    
+    <!-- AI Messages -->
+    <string name="ai_not_available">AI model is not loaded. Please restart the app or continue without AI features.</string>
+    <string name="ai_processing">Processing your question…</string>
+    <string name="ai_error">Sorry, I encountered an error. Please try again.</string>
+    
+    <!-- Store Listing (for reference) -->
+    <string name="store_short_description">Privacy-first AI assistant. Read and analyze documents offline.</string>
+    <string name="store_full_description" translatable="false">DocuMind is your personal AI reading assistant that works 100% offline.
+
+📱 WORKS COMPLETELY OFFLINE
+All document processing and AI analysis happens directly on your device. Your documents never leave your phone - guaranteed privacy.
+
+📄 SUPPORTED FORMATS
+• PDF documents
+• Word documents (DOCX)
+• Web pages (URL)
+• Pasted text
+
+🤖 INTELLIGENT Q&amp;A
+Ask questions about your documents and get instant answers powered by on-device AI (Gemma-3).
+
+🔒 PRIVACY FIRST
+• No cloud uploads
+• No data collection
+• No account required
+• No internet needed (except URL extraction)
+
+⚡ KEY FEATURES
+• Extract text from PDF and Word files
+• Analyze web articles offline
+• Smart text chunking for large documents
+• Beautiful, modern interface
+• Dark mode support
+
+Perfect for:
+• Students reviewing study materials
+• Professionals analyzing reports
+• Researchers processing papers
+• Anyone who values privacy
+
+Download DocuMind and experience private, on-device AI document analysis.</string>
+    
+    <!-- Support/Donate -->
+    <string name="support_title">Support DocuMind</string>
+    <string name="support_description">If you enjoy using DocuMind, consider buying me a coffee! Your support helps keep this app free and ad-free.</string>
+    <string name="support_button">Support</string>
+    <string name="support_buy_coffee">Buy Me a Coffee</string>
+    <string name="support_rate">Rate on Play Store</string>
+    <string name="support_thank_you">Thank you for your support! Every contribution helps.</string>
+    
+    <!-- Content Descriptions (Accessibility) -->
+    <string name="cd_app_logo">DocuMind logo</string>
+    <string name="cd_source_pdf">Open PDF file</string>
+    <string name="cd_source_word">Open Word document</string>
+    <string name="cd_source_url">Enter website URL</string>
+    <string name="cd_source_text">Paste text</string>
+    <string name="cd_send_message">Send message</string>
+    <string name="cd_clear_document">Clear document and go back</string>
+    <string name="cd_offline_indicator">App works offline</string>
+    <string name="cd_loading_indicator">Loading</string>
+    <string name="cd_support_button">Support the developer</string>
 </resources>

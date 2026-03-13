@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Large model files (delivered via Play Asset Delivery)
+*.task
+model_pack/src/main/assets/*.task

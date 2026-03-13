@@ -1,5 +1,6 @@
 package com.documind.app.data.llm
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.google.android.play.core.assetpacks.AssetPackManager
@@ -34,107 +35,103 @@ class ModelStatusManager(private val context: Context) {
     val modelState: StateFlow<ModelState> = _modelState.asStateFlow()
     
     private var modelPath: String? = null
+    private var activityRef: Activity? = null
     
-    private val stateUpdateListener = AssetPackStateUpdateListener { state ->
-        handlePackState(state)
+    private val listener = AssetPackStateUpdateListener { state ->
+        if (state.name() == MODEL_PACK_NAME) {
+            handleState(state)
+        }
     }
     
     init {
-        assetPackManager.registerListener(stateUpdateListener)
+        assetPackManager.registerListener(listener)
+    }
+    
+    fun setActivity(activity: Activity?) {
+        activityRef = activity
     }
     
     fun checkModelStatus() {
-        // First check if model exists in local assets (for development/testing)
-        val localModelPath = checkLocalModel()
-        if (localModelPath != null) {
-            modelPath = localModelPath
+        Log.d(TAG, "Checking model...")
+        
+        // 1. Check if already downloaded via Play Asset Delivery
+        val location = assetPackManager.getPackLocation(MODEL_PACK_NAME)
+        if (location != null) {
+            val path = "${location.assetsPath()}/$MODEL_FILE_NAME"
+            if (File(path).exists()) {
+                modelPath = path
+                _modelState.value = ModelState.Ready
+                Log.d(TAG, "Model ready: $path")
+                return
+            }
+        }
+        
+        // 2. Check local files (for development)
+        checkLocalFiles()?.let {
+            modelPath = it
             _modelState.value = ModelState.Ready
-            Log.d(TAG, "Model found at local path: $localModelPath")
+            Log.d(TAG, "Local model: $it")
             return
         }
         
-        // Then check Play Asset Delivery
-        val packLocation = assetPackManager.getPackLocation(MODEL_PACK_NAME)
-        if (packLocation != null) {
-            modelPath = "${packLocation.assetsPath()}/$MODEL_FILE_NAME"
-            _modelState.value = ModelState.Ready
-            Log.d(TAG, "Model found in asset pack: $modelPath")
-        } else {
-            requestModelDownload()
-        }
+        // 3. Start download
+        startDownload()
     }
     
-    private fun checkLocalModel(): String? {
-        // Check in app's files directory (for manually copied models during development)
-        val filesDir = File(context.filesDir, MODEL_FILE_NAME)
-        if (filesDir.exists()) {
-            Log.d(TAG, "Found model in files dir: ${filesDir.absolutePath}")
-            return filesDir.absolutePath
-        }
-        
-        // Check in external files directory
-        val externalDir = context.getExternalFilesDir(null)
-        if (externalDir != null) {
-            val externalModel = File(externalDir, MODEL_FILE_NAME)
-            if (externalModel.exists()) {
-                Log.d(TAG, "Found model in external files dir: ${externalModel.absolutePath}")
-                return externalModel.absolutePath
+    private fun checkLocalFiles(): String? {
+        listOf(
+            File(context.filesDir, MODEL_FILE_NAME),
+            context.getExternalFilesDir(null)?.let { File(it, MODEL_FILE_NAME) }
+        ).forEach { file ->
+            if (file?.exists() == true && file.length() > 0) {
+                return file.absolutePath
             }
         }
-        
-        // For local development: Try to copy from app assets to files dir
-        try {
-            val assetFiles = context.assets.list("") ?: emptyArray()
-            if (assetFiles.contains(MODEL_FILE_NAME)) {
-                Log.d(TAG, "Found model in app assets, copying to files dir...")
-                val destFile = File(context.filesDir, MODEL_FILE_NAME)
-                context.assets.open(MODEL_FILE_NAME).use { input ->
-                    destFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                Log.d(TAG, "Model copied to: ${destFile.absolutePath}")
-                return destFile.absolutePath
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to copy model from assets", e)
-        }
-        
         return null
     }
     
-    private fun requestModelDownload() {
+    fun startDownload() {
+        Log.d(TAG, "Starting download...")
         _modelState.value = ModelState.Downloading(0)
+        
         try {
             assetPackManager.fetch(listOf(MODEL_PACK_NAME))
+                .addOnSuccessListener { Log.d(TAG, "Fetch started") }
+                .addOnFailureListener { e -> 
+                    Log.e(TAG, "Fetch failed", e)
+                    _modelState.value = ModelState.Error("Download failed")
+                }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch asset pack", e)
-            handleAssetPackUnavailable()
+            Log.e(TAG, "Fetch error", e)
+            _modelState.value = ModelState.Error("Download error")
         }
     }
     
-    private fun handleAssetPackUnavailable() {
-        _modelState.value = ModelState.Error(
-            "Model not available. For local testing:\n" +
-            "1. Download gemma3-1b.task model file\n" +
-            "2. Copy to: ${context.filesDir.absolutePath}/$MODEL_FILE_NAME\n" +
-            "Or deploy via Play Store for asset pack delivery."
-        )
+    fun requestCellularDownload(activity: Activity) {
+        try {
+            assetPackManager.showCellularDataConfirmation(activity)
+        } catch (e: Exception) {
+            Log.e(TAG, "Cellular request failed", e)
+        }
     }
     
-    private fun handlePackState(packState: AssetPackState) {
-        if (packState.name() != MODEL_PACK_NAME) return
+    private fun handleState(state: AssetPackState) {
+        val status = state.status()
+        Log.d(TAG, "Status: $status")
         
-        when (packState.status()) {
-            AssetPackStatus.PENDING,
-            AssetPackStatus.DOWNLOADING -> {
-                val totalBytes = packState.totalBytesToDownload()
-                val downloadedBytes = packState.bytesDownloaded()
-                val progress = if (totalBytes > 0) {
-                    ((downloadedBytes * 100) / totalBytes).toInt()
-                } else {
-                    0
+        when (status) {
+            AssetPackStatus.COMPLETED -> {
+                val loc = assetPackManager.getPackLocation(MODEL_PACK_NAME)
+                if (loc != null) {
+                    modelPath = "${loc.assetsPath()}/$MODEL_FILE_NAME"
+                    _modelState.value = ModelState.Ready
+                    Log.d(TAG, "Download complete: $modelPath")
                 }
+            }
+            AssetPackStatus.DOWNLOADING, AssetPackStatus.PENDING -> {
+                val total = state.totalBytesToDownload()
+                val done = state.bytesDownloaded()
+                val progress = if (total > 0) ((done * 100) / total).toInt() else 0
                 _modelState.value = ModelState.Downloading(progress)
             }
             AssetPackStatus.TRANSFERRING -> {
@@ -142,41 +139,21 @@ class ModelStatusManager(private val context: Context) {
             }
             AssetPackStatus.WAITING_FOR_WIFI -> {
                 _modelState.value = ModelState.WaitingForWifi
-                Log.d(TAG, "Waiting for WiFi to download model")
-            }
-            AssetPackStatus.COMPLETED -> {
-                val packLocation = assetPackManager.getPackLocation(MODEL_PACK_NAME)
-                if (packLocation != null) {
-                    modelPath = "${packLocation.assetsPath()}/$MODEL_FILE_NAME"
-                    _modelState.value = ModelState.Ready
-                } else {
-                    _modelState.value = ModelState.Error("Failed to locate model after download")
-                }
+                activityRef?.let { requestCellularDownload(it) }
             }
             AssetPackStatus.FAILED -> {
-                val errorCode = packState.errorCode()
-                if (errorCode == -5) {
-                    handleAssetPackUnavailable()
-                } else {
-                    _modelState.value = ModelState.Error("Model download failed: $errorCode")
-                }
-            }
-            AssetPackStatus.CANCELED -> {
-                _modelState.value = ModelState.Error("Model download was canceled")
+                _modelState.value = ModelState.Error("Download failed: ${state.errorCode()}")
             }
             AssetPackStatus.NOT_INSTALLED -> {
-                requestModelDownload()
+                startDownload()
             }
-            else -> {
-                // Unknown status - check if API unavailable
-                handleAssetPackUnavailable()
-            }
+            else -> {}
         }
     }
     
     fun getModelPath(): String? = modelPath
     
     fun cleanup() {
-        assetPackManager.unregisterListener(stateUpdateListener)
+        assetPackManager.unregisterListener(listener)
     }
 }

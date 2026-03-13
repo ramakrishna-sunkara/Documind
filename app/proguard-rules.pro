@@ -104,6 +104,26 @@
 -dontwarn org.apache.poi.**
 -dontwarn org.apache.xmlbeans.**
 -dontwarn org.openxmlformats.**
+
+# ===================================================================
+# Apache Log4j (required by POI)
+# ===================================================================
+
+-keep class org.apache.logging.log4j.** { *; }
+-keep class org.apache.logging.log4j.spi.** { *; }
+-keep class org.apache.logging.log4j.message.** { *; }
+-keep class org.apache.logging.log4j.status.** { *; }
+-keep class org.apache.logging.log4j.util.** { *; }
+-keepclassmembers class org.apache.logging.log4j.** {
+    <init>(...);
+    *;
+}
+-dontwarn org.apache.logging.log4j.**
+
+# Keep Log4j message factories (fix for InstantiationException)
+-keep class * extends org.apache.logging.log4j.message.MessageFactory { *; }
+-keep class * extends org.apache.logging.log4j.message.FlowMessageFactory { *; }
+-keep class * implements org.apache.logging.log4j.spi.Provider { *; }
 -dontwarn org.etsi.**
 -dontwarn org.w3.**
 -dontwarn com.microsoft.**

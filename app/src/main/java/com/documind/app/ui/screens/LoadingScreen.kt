@@ -32,9 +32,15 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -54,6 +60,7 @@ import com.documind.app.ui.theme.OfflineBadge
 fun LoadingScreen(
     modelState: ModelState,
     onSkipModel: () -> Unit = {},
+    onRequestCellularDownload: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -66,6 +73,36 @@ fun LoadingScreen(
         ),
         label = "scale"
     )
+    
+    // Auto-skip after 5 seconds if still downloading at 0% or idle
+    var showSkipButton by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(modelState) {
+        when {
+            modelState is ModelState.Idle || 
+            (modelState is ModelState.Downloading && modelState.progress == 0) -> {
+                delay(3000) // Show skip button after 3 seconds
+                showSkipButton = true
+                delay(5000) // Auto-skip after 8 total seconds
+                onSkipModel()
+            }
+            modelState is ModelState.WaitingForWifi -> {
+                // Auto-skip after 5 seconds if waiting for WiFi
+                delay(5000)
+                onSkipModel()
+            }
+            modelState is ModelState.Ready -> {
+                // Auto-proceed when ready
+                delay(500)
+                onSkipModel()
+            }
+            modelState is ModelState.Error -> {
+                // Auto-skip after 3 seconds on error
+                delay(3000)
+                onSkipModel()
+            }
+        }
+    }
     
     Box(
         modifier = modifier.fillMaxSize()
@@ -128,10 +165,24 @@ fun LoadingScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    
+                    if (showSkipButton) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        TextButton(
+                            onClick = onSkipModel
+                        ) {
+                            Text(
+                                text = "Skip - Use without AI",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
                 is ModelState.Downloading -> {
                     Text(
-                        text = "Loading AI Model...",
+                        text = if (modelState.progress == 0) "Preparing AI Model..." else "Downloading AI Model...",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -163,6 +214,27 @@ fun LoadingScreen(
                         ),
                         color = MaterialTheme.colorScheme.primary
                     )
+                    
+                    // Show skip button for users who don't want to wait
+                    if (showSkipButton || modelState.progress == 0) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        TextButton(
+                            onClick = onSkipModel
+                        ) {
+                            Text(
+                                text = "Skip - Use without AI",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        Text(
+                            text = "Model will download in background",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 is ModelState.WaitingForWifi -> {
                     Surface(
@@ -202,7 +274,28 @@ fun LoadingScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Option to download over mobile data
+                    Button(
+                        onClick = onRequestCellularDownload,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                    ) {
+                        Text(
+                            text = "Download over Mobile Data",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
                     
                     Button(
                         onClick = onSkipModel,

@@ -13,8 +13,8 @@ android {
         applicationId = "com.documind.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 12
+        versionName = "1.0.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
@@ -138,6 +138,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.fragment.ktx)
     
     // Compose
     implementation(platform(libs.androidx.compose.bom))

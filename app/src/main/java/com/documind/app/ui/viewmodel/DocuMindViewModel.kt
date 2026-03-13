@@ -1,5 +1,6 @@
 package com.documind.app.ui.viewmodel
 
+import android.app.Activity
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -46,10 +47,17 @@ class DocuMindViewModel(
     private val _currentDocument = MutableStateFlow<DocumentContent?>(null)
     val currentDocument: StateFlow<DocumentContent?> = _currentDocument.asStateFlow()
     
+    // Track actual LLM initialization status (not just model file status)
+    private val _isLlmReady = MutableStateFlow(false)
+    val isLlmReady: StateFlow<Boolean> = _isLlmReady.asStateFlow()
+    
     private var modelInitStartTime = 0L
     private var queryStartTime = 0L
     
     init {
+        // Go directly to Home screen - no blocking on model download
+        _currentScreen.value = UiScreen.Home
+        AnalyticsManager.logScreenView("Home")
         checkModelAndInitialize()
     }
     
@@ -65,10 +73,9 @@ class DocuMindViewModel(
                     }
                     is ModelState.Error -> {
                         AnalyticsManager.logModelInitFailed(state.message)
-                        _currentScreen.value = UiScreen.Loading
                     }
                     else -> {
-                        _currentScreen.value = UiScreen.Loading
+                        // Model is downloading or waiting - don't block UI
                     }
                 }
             }
@@ -81,12 +88,12 @@ class DocuMindViewModel(
             if (modelPath != null) {
                 llmManager.initialize(modelPath).fold(
                     onSuccess = {
+                        _isLlmReady.value = true
                         val duration = System.currentTimeMillis() - modelInitStartTime
                         AnalyticsManager.logModelInitialized(duration)
-                        AnalyticsManager.logScreenView("Home")
-                        _currentScreen.value = UiScreen.Home
                     },
                     onFailure = { error ->
+                        _isLlmReady.value = false
                         AnalyticsManager.logModelInitFailed(error.message ?: "Unknown error")
                     }
                 )
@@ -258,6 +265,20 @@ class DocuMindViewModel(
         _currentScreen.value = UiScreen.Home
         AnalyticsManager.logModelSkipped()
         AnalyticsManager.logScreenView("Home")
+    }
+    
+    fun setActivity(activity: Activity?) {
+        modelStatusManager.setActivity(activity)
+    }
+    
+    fun requestCellularDownload(activity: Activity) {
+        modelStatusManager.requestCellularDownload(activity)
+        AnalyticsManager.logEvent("cellular_download_requested", null)
+    }
+    
+    fun startModelDownload() {
+        modelStatusManager.startDownload()
+        AnalyticsManager.logEvent("model_download_started", null)
     }
     
     override fun onCleared() {

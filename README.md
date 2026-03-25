@@ -115,6 +115,10 @@ The AI model (~530MB) is delivered via Google Play Asset Delivery:
 
 Copyright © 2024 Ram Apps. All rights reserved.
 
+## Play Store Link
+
+https://play.google.com/store/apps/details?id=com.documind.app
+
 ## Support
 
 - Buy Me a Coffee: https://buymeacoffee.com/ramandroid

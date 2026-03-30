@@ -26,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.documind.app.data.llm.ModelState
 import com.documind.app.data.update.InAppUpdateManager
 import com.documind.app.data.update.UpdateState
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.documind.app.domain.model.UiScreen
 import com.documind.app.ui.screens.ChatScreen
 import com.documind.app.ui.screens.HomeScreen
@@ -46,35 +47,56 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Initialize In-App Update Manager
-        inAppUpdateManager = InAppUpdateManager(this)
-        inAppUpdateManager.setUpdateLauncher(updateLauncher)
+        try {
+            // Initialize In-App Update Manager
+            inAppUpdateManager = InAppUpdateManager(this)
+            inAppUpdateManager.setUpdateLauncher(updateLauncher)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Update manager init failed: ${e.message}")
+        }
 
         enableEdgeToEdge()
         setContent {
             DocumindTheme {
-                DocuMindMainContent(inAppUpdateManager)
+                DocuMindMainContent(if (::inAppUpdateManager.isInitialized) inAppUpdateManager else null)
             }
         }
         
         // Check for updates when app starts
-        inAppUpdateManager.checkForUpdate()
+        try {
+            if (::inAppUpdateManager.isInitialized) {
+                inAppUpdateManager.checkForUpdate()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Update check failed: ${e.message}")
+        }
     }
     
     override fun onResume() {
         super.onResume()
-        // Resume any pending updates
-        inAppUpdateManager.resumeUpdate()
+        try {
+            if (::inAppUpdateManager.isInitialized) {
+                inAppUpdateManager.resumeUpdate()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Resume update failed: ${e.message}")
+        }
     }
     
     override fun onDestroy() {
         super.onDestroy()
-        inAppUpdateManager.cleanup()
+        try {
+            if (::inAppUpdateManager.isInitialized) {
+                inAppUpdateManager.cleanup()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Cleanup failed: ${e.message}")
+        }
     }
 }
 
 @Composable
-fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager) {
+fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
     val context = LocalContext.current
     val activity = context as? Activity
     
@@ -98,13 +120,14 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager) {
     val queryState by viewModel.queryState.collectAsState()
     val currentDocument by viewModel.currentDocument.collectAsState()
     
-    // Update state
-    val updateState by inAppUpdateManager.updateState.collectAsState()
+    // Update state - handle nullable manager
+    val updateState by (inAppUpdateManager?.updateState
+        ?: MutableStateFlow<UpdateState>(UpdateState.Idle)).collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
     // Show snackbar when update is ready to install
     LaunchedEffect(updateState) {
-        if (updateState is UpdateState.ReadyToInstall) {
+        if (updateState is UpdateState.ReadyToInstall && inAppUpdateManager != null) {
             val result = snackbarHostState.showSnackbar(
                 message = "Update downloaded! Restart to apply.",
                 actionLabel = "RESTART",

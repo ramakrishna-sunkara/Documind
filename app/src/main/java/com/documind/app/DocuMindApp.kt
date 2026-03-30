@@ -16,57 +16,59 @@ class DocuMindApp : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        initializeFirebase()
-        initializeCrashlytics()
-        initializePdfBox()
-        initializeAnalytics()
-        subscribeFcmTopics()
+        
+        // Initialize in order with error handling - crash-safe startup
+        safeInit("Firebase") { initializeFirebase() }
+        safeInit("Crashlytics") { initializeCrashlytics() }
+        safeInit("PDFBox") { initializePdfBox() }
+        safeInit("Analytics") { initializeAnalytics() }
+        safeInit("FCM") { subscribeFcmTopics() }
+    }
+    
+    private inline fun safeInit(name: String, block: () -> Unit) {
+        try {
+            block()
+            Log.d(TAG, "$name initialized")
+        } catch (e: Exception) {
+            Log.e(TAG, "$name initialization failed: ${e.message}")
+        }
     }
     
     private fun initializeFirebase() {
         FirebaseApp.initializeApp(this)
-        Log.d(TAG, "Firebase initialized")
     }
     
     private fun initializeCrashlytics() {
-        val crashlytics = FirebaseCrashlytics.getInstance()
-        
-        // Enable/disable based on build type
-        crashlytics.isCrashlyticsCollectionEnabled = !BuildConfig.DEBUG
-        
-        // Set custom keys for better crash context
-        crashlytics.setCustomKey("app_version", BuildConfig.VERSION_NAME)
-        crashlytics.setCustomKey("build_type", if (BuildConfig.DEBUG) "debug" else "release")
-        
-        Log.d(TAG, "Crashlytics initialized (enabled: ${!BuildConfig.DEBUG})")
+        try {
+            val crashlytics = FirebaseCrashlytics.getInstance()
+            crashlytics.isCrashlyticsCollectionEnabled = !BuildConfig.DEBUG
+            crashlytics.setCustomKey("app_version", BuildConfig.VERSION_NAME)
+            crashlytics.setCustomKey("build_type", if (BuildConfig.DEBUG) "debug" else "release")
+        } catch (e: Exception) {
+            Log.e(TAG, "Crashlytics setup error: ${e.message}")
+        }
     }
     
     private fun initializePdfBox() {
         PDFBoxResourceLoader.init(this)
-        Log.d(TAG, "PDFBox initialized")
     }
     
     private fun initializeAnalytics() {
         AnalyticsManager.initialize(this)
         AnalyticsManager.logAppOpen()
-        Log.d(TAG, "Analytics initialized")
     }
     
     private fun subscribeFcmTopics() {
-        // Subscribe to general topic for all users
         FirebaseMessaging.getInstance().subscribeToTopic("all_users")
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d(TAG, "Subscribed to 'all_users' topic")
-                } else {
-                    Log.w(TAG, "Failed to subscribe to topic", task.exception)
                 }
             }
         
-        // Get FCM token for debugging
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Log.d(TAG, "FCM Token: ${task.result}")
+                Log.d(TAG, "FCM Token obtained")
             }
         }
     }

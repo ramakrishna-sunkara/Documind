@@ -1,0 +1,176 @@
+---
+description: DocuMind - Principal Android/AI Engineer coding standards
+alwaysApply: true
+---
+
+# DocuMind Principal Android/AI Engineer Rules
+
+Expert Android Engineer standards for DocuMind - Universal AI Reading Assistant with on-device LLM.
+
+## 1. Architecture (Clean + MVVM)
+
+```
+app/
+├── data/           # Repositories, data sources, extractors
+│   ├── llm/        # LlmManager, ModelStatusManager
+│   ├── extractor/  # PdfExtractor, DocxExtractor, WebExtractor
+│   └── processor/  # ContentProcessor
+├── domain/
+│   ├── model/      # ContentItem, ChatMessage, ModelState
+│   └── usecase/    # Business logic (single responsibility)
+├── ui/
+│   ├── screens/    # HomeScreen, ReaderScreen, ChatScreen
+│   ├── components/ # Reusable composables
+│   ├── viewmodel/  # DocuMindViewModel (StateFlow)
+│   └── theme/      # Material3 theme, colors
+└── util/           # Extensions, helpers
+```
+
+- **ViewModel:** Expose `StateFlow` for UI state, `SharedFlow` for one-time events
+- **Repository:** Single source of truth; constructor-inject via Hilt
+- **UseCase:** One public function per use case
+
+## 2. Jetpack Compose
+
+```kotlin
+// ❌ BAD - State in composable
+@Composable
+fun ChatScreen() {
+    var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
+}
+
+// ✅ GOOD - Hoisted to ViewModel
+@Composable
+fun ChatScreen(
+    messages: List<ChatMessage>,
+    onSendMessage: (String) -> Unit
+)
+```
+
+- Mark domain models `@Stable` or `@Immutable`
+- Use `derivedStateOf` for computed values
+- Use `remember { }` for lambdas passed to child composables
+- Follow Material 3; use `MaterialTheme.colorScheme`
+
+## 3. On-Device AI (MediaPipe LlmInference)
+
+```kotlin
+// ✅ GOOD - Encapsulated AI with Flow streaming
+class LlmManager @Inject constructor(
+    private val modelStatusManager: ModelStatusManager
+) {
+    suspend fun generateResponse(prompt: String): Flow<String> = flow {
+        llmInference?.generateResponseAsync(prompt)?.collect { emit(it) }
+    }.flowOn(Dispatchers.Default)
+}
+```
+
+- Model file: `gemma3-1b.task` via Play Asset Delivery (`install-time`)
+- Always check `ModelState` before AI operations
+- Stream responses via `Flow<String>` for real-time UI updates
+- Handle `ModelState.Error` gracefully with user feedback
+
+## 4. Coroutines & Flow
+
+```kotlin
+// ❌ BAD
+GlobalScope.launch { fetchData() }
+
+// ✅ GOOD
+viewModelScope.launch {
+    contentProcessor.extractContent(uri)
+        .catch { emit(Result.failure(it)) }
+        .collect { _uiState.update { state -> state.copy(content = it) } }
+}
+```
+
+- Use `viewModelScope` in ViewModels, `lifecycleScope` in Activities
+- Prefer `Flow` over `LiveData` for new code
+- Use `flowOn(Dispatchers.IO)` for file/network operations
+
+## 5. Error Handling
+
+```kotlin
+// ✅ GOOD - Result wrapper
+suspend fun extractPdf(uri: Uri): Result<String> = runCatching {
+    withContext(Dispatchers.IO) {
+        contentResolver.openInputStream(uri)?.use { stream ->
+            PDDocument.load(stream).use { doc ->
+                PDFTextStripper().getText(doc)
+            }
+        } ?: throw IOException("Cannot open file")
+    }
+}
+```
+
+- Use `runCatching` / `Result` for I/O and AI operations
+- Never swallow exceptions silently
+- Show user-friendly error messages via `UiState.Error`
+
+## 6. Hilt Dependency Injection
+
+```kotlin
+// ✅ GOOD - Constructor injection
+@HiltViewModel
+class DocuMindViewModel @Inject constructor(
+    private val llmManager: LlmManager,
+    private val contentProcessor: ContentProcessor,
+    private val analyticsManager: AnalyticsManager
+) : ViewModel()
+```
+
+- Use `@Singleton` for managers (LlmManager, ModelStatusManager)
+- Use `@ActivityRetainedScoped` when Activity context needed
+- Provide `@ApplicationContext` for context-dependent classes
+
+## 7. Content Extractors
+
+| Format | Library | Class |
+|--------|---------|-------|
+| PDF | Apache PDFBox | `PdfExtractor` |
+| DOCX | Apache POI | `DocxExtractor` |
+| Web | Jsoup | `WebExtractor` |
+| Text | Kotlin stdlib | Direct read |
+
+- Return `Result<String>` from extractors
+- Handle large files with chunking
+- ProGuard: Keep POI/Log4j2 classes (see `proguard-rules.pro`)
+
+## 8. Play Asset Delivery
+
+```kotlin
+// Model delivery config (model_pack/build.gradle.kts)
+assetPack {
+    packName.set("model_pack")
+    dynamicDelivery {
+        deliveryType.set("install-time")  // Bundled with APK
+    }
+}
+```
+
+- `install-time`: Model bundled (~600MB AAB)
+- Track download via `AssetPackStateUpdateListener`
+- Verify file existence before reporting `ModelState.Ready`
+
+## 9. Code Quality
+
+- **Logging:** Use `android.util.Log` with TAG; no `println`
+- **Nulls:** Strict null-safety; use `?.let { }`, `?: return`
+- **Naming:** `camelCase` functions, `PascalCase` classes, `SCREAMING_SNAKE` constants
+- **No God classes:** Split large ViewModels by feature
+
+## 10. Testing
+
+```kotlin
+// ViewModel test example
+@Test
+fun `processContent emits success state`() = runTest {
+    val viewModel = DocuMindViewModel(mockLlmManager, mockProcessor)
+    viewModel.processContent(testUri)
+    assertEquals(UiState.Success, viewModel.uiState.value)
+}
+```
+
+- Unit tests: JUnit5 + MockK
+- UI tests: Compose Testing + Espresso
+- Test AI responses with mock `LlmManager`

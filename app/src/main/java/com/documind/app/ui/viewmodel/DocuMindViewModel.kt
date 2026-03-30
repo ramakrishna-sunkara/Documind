@@ -57,46 +57,63 @@ class DocuMindViewModel(
     init {
         // Go directly to Home screen - no blocking on model download
         _currentScreen.value = UiScreen.Home
-        AnalyticsManager.logScreenView("Home")
+        try {
+            AnalyticsManager.logScreenView("Home")
+        } catch (_: Exception) {}
         checkModelAndInitialize()
     }
     
     private fun checkModelAndInitialize() {
         viewModelScope.launch {
-            modelInitStartTime = System.currentTimeMillis()
-            modelStatusManager.checkModelStatus()
-            
-            modelStatusManager.modelState.collect { state ->
-                when (state) {
-                    is ModelState.Ready -> {
-                        initializeLLM()
-                    }
-                    is ModelState.Error -> {
-                        AnalyticsManager.logModelInitFailed(state.message)
-                    }
-                    else -> {
-                        // Model is downloading or waiting - don't block UI
+            try {
+                modelInitStartTime = System.currentTimeMillis()
+                modelStatusManager.checkModelStatus()
+                
+                modelStatusManager.modelState.collect { state ->
+                    when (state) {
+                        is ModelState.Ready -> {
+                            initializeLLM()
+                        }
+                        is ModelState.Error -> {
+                            try {
+                                AnalyticsManager.logModelInitFailed(state.message)
+                            } catch (_: Exception) {}
+                        }
+                        else -> {
+                            // Model is downloading or waiting - don't block UI
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                android.util.Log.e("DocuMindViewModel", "Model check error: ${e.message}")
             }
         }
     }
     
     private fun initializeLLM() {
         viewModelScope.launch {
-            val modelPath = modelStatusManager.getModelPath()
-            if (modelPath != null) {
-                llmManager.initialize(modelPath).fold(
-                    onSuccess = {
-                        _isLlmReady.value = true
-                        val duration = System.currentTimeMillis() - modelInitStartTime
-                        AnalyticsManager.logModelInitialized(duration)
-                    },
-                    onFailure = { error ->
-                        _isLlmReady.value = false
-                        AnalyticsManager.logModelInitFailed(error.message ?: "Unknown error")
-                    }
-                )
+            try {
+                val modelPath = modelStatusManager.getModelPath()
+                if (modelPath != null) {
+                    llmManager.initialize(modelPath).fold(
+                        onSuccess = {
+                            _isLlmReady.value = true
+                            val duration = System.currentTimeMillis() - modelInitStartTime
+                            try {
+                                AnalyticsManager.logModelInitialized(duration)
+                            } catch (_: Exception) {}
+                        },
+                        onFailure = { error ->
+                            _isLlmReady.value = false
+                            try {
+                                AnalyticsManager.logModelInitFailed(error.message ?: "Unknown error")
+                            } catch (_: Exception) {}
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                _isLlmReady.value = false
+                android.util.Log.e("DocuMindViewModel", "LLM init error: ${e.message}")
             }
         }
     }

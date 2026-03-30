@@ -13,8 +13,8 @@ android {
         applicationId = "com.documind.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.0.11"
+        versionCode = 21
+        versionName = "1.0.21"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true

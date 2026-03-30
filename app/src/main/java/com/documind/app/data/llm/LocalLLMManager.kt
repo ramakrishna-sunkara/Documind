@@ -41,12 +41,20 @@ Rules:
             try {
                 val modelFile = File(modelPath)
                 if (!modelFile.exists()) {
+                    Log.e(TAG, "Model file not found: $modelPath")
                     return@withContext Result.failure(
-                        IllegalStateException("Model file not found at: $modelPath")
+                        IllegalStateException("Model file not found")
                     )
                 }
                 
-                Log.d(TAG, "Initializing LLM with MAX_TOKENS=$MAX_TOKENS")
+                if (modelFile.length() < 100_000_000) { // ~100MB minimum
+                    Log.e(TAG, "Model file too small: ${modelFile.length()} bytes")
+                    return@withContext Result.failure(
+                        IllegalStateException("Model file appears corrupted")
+                    )
+                }
+                
+                Log.d(TAG, "Initializing LLM from: $modelPath (${modelFile.length() / 1_000_000}MB)")
                 
                 val options = LlmInference.LlmInferenceOptions.builder()
                     .setModelPath(modelPath)
@@ -58,8 +66,10 @@ Rules:
                 Log.d(TAG, "LLM initialized successfully")
                 Result.success(Unit)
             } catch (e: Exception) {
-                Log.e(TAG, "LLM initialization failed", e)
-                Result.failure(e)
+                Log.e(TAG, "LLM initialization failed: ${e.message}", e)
+                isInitialized = false
+                llmInference = null
+                Result.failure(Exception("AI model failed to load. Device may not be supported."))
             }
         }
     }

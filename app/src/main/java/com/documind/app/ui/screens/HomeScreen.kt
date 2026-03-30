@@ -92,7 +92,6 @@ fun HomeScreen(
     var showUrlDialog by remember { mutableStateOf(false) }
     var showTextDialog by remember { mutableStateOf(false) }
     var showSupportSheet by remember { mutableStateOf(false) }
-    var showDownloadDialog by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var textInput by remember { mutableStateOf("") }
     
@@ -151,11 +150,7 @@ fun HomeScreen(
             ModelStatusBanner(
                 modelState = modelState,
                 isLlmReady = isLlmReady,
-                onDownloadClick = { 
-                    // Start download immediately when banner is tapped
-                    onStartModelDownload()
-                    showDownloadDialog = true 
-                },
+                onDownloadClick = onStartModelDownload,
                 onCellularClick = onRequestCellularDownload
             )
             
@@ -200,7 +195,7 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             if (extractionState is ExtractionState.Extracting) {
                 Surface(
@@ -251,7 +246,7 @@ fun HomeScreen(
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -418,93 +413,6 @@ fun HomeScreen(
             onDismiss = { showSupportSheet = false }
         )
     }
-    
-    // Model Download Dialog
-    if (showDownloadDialog) {
-        AlertDialog(
-            onDismissRequest = { showDownloadDialog = false },
-            shape = RoundedCornerShape(20.dp),
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Psychology,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            title = {
-                Text(
-                    "Download AI Model",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    textAlign = TextAlign.Center
-                )
-            },
-            text = {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        "The AI model (~500MB) enables intelligent document Q&A.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                "• Download happens in background",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "• App remains fully usable",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "• One-time download only",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDownloadDialog = false
-                        // Start the actual download
-                        onStartModelDownload()
-                    },
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudDownload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Download Now", fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDownloadDialog = false }) {
-                    Text("Later")
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -583,19 +491,16 @@ private fun ModelStatusBanner(
     onDownloadClick: () -> Unit,
     onCellularClick: () -> Unit
 ) {
-    // Use actual LLM readiness for "AI Ready" status, not just model file status
-    val effectiveState = if (isLlmReady) {
-        ModelState.Ready
-    } else {
-        modelState
-    }
+    val isError = modelState is ModelState.Error
+    val errorMessage = if (isError) (modelState as ModelState.Error).message else ""
     
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = when {
             isLlmReady -> SuccessGreen.copy(alpha = 0.12f)
-            effectiveState is ModelState.Downloading -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            effectiveState is ModelState.WaitingForWifi -> WarningAmber.copy(alpha = 0.12f)
+            modelState is ModelState.Downloading -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            modelState is ModelState.WaitingForWifi -> WarningAmber.copy(alpha = 0.12f)
+            isError -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
             else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
         },
         modifier = Modifier
@@ -603,6 +508,7 @@ private fun ModelStatusBanner(
             .animateContentSize()
     ) {
         when {
+            // AI Ready
             isLlmReady -> {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -617,16 +523,14 @@ private fun ModelStatusBanner(
                     )
                     Text(
                         text = "AI Ready",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = SuccessGreen
                     )
                 }
             }
             
-            effectiveState is ModelState.Downloading -> {
-                val downloadState = effectiveState as ModelState.Downloading
+            // Downloading
+            modelState is ModelState.Downloading -> {
                 Column(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -640,30 +544,20 @@ private fun ModelStatusBanner(
                             strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Downloading AI Model...",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "You can use the app while downloading",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                         Text(
-                            text = "${downloadState.progress}%",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
+                            text = "Downloading AI Model...",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "${modelState.progress}%",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                     LinearProgressIndicator(
-                        progress = { downloadState.progress / 100f },
+                        progress = { modelState.progress / 100f },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
@@ -675,7 +569,8 @@ private fun ModelStatusBanner(
                 }
             }
             
-            effectiveState is ModelState.WaitingForWifi -> {
+            // Waiting for WiFi
+            modelState is ModelState.WaitingForWifi -> {
                 Row(
                     modifier = Modifier
                         .clickable { onCellularClick() }
@@ -689,31 +584,46 @@ private fun ModelStatusBanner(
                         modifier = Modifier.size(20.dp),
                         tint = WarningAmber
                     )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Waiting for WiFi",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = WarningAmber
-                        )
-                        Text(
-                            text = "Tap to download over mobile data",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.SignalCellularAlt,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                    Text(
+                        text = "Waiting for WiFi - Tap to use mobile data",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = WarningAmber
                     )
                 }
             }
             
+            // Error - tap to retry
+            isError -> {
+                Row(
+                    modifier = Modifier
+                        .clickable { onDownloadClick() }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = errorMessage,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = "Tap to retry",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            // Idle - need to download
             else -> {
-                // Idle, Error, or Ready but LLM not initialized
                 Row(
                     modifier = Modifier
                         .clickable { onDownloadClick() }
@@ -727,36 +637,12 @@ private fun ModelStatusBanner(
                         modifier = Modifier.size(24.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (effectiveState is ModelState.Error) "Download Failed" else "AI Model Required",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = if (effectiveState is ModelState.Error) 
-                                MaterialTheme.colorScheme.error 
-                            else 
-                                MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Tap to download (~500MB)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text(
-                            text = "Download",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
-                    }
+                    Text(
+                        text = "Tap to download AI Model (~500MB)",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }

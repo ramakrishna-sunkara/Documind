@@ -95,7 +95,13 @@
 # ===================================================================
 
 -keep class org.apache.poi.** { *; }
+-keep interface org.apache.poi.** { *; }
+-keepclassmembers class org.apache.poi.** { *; }
+
 -keep class org.apache.xmlbeans.** { *; }
+-keep interface org.apache.xmlbeans.** { *; }
+-keepclassmembers class org.apache.xmlbeans.** { *; }
+
 -keep class org.openxmlformats.** { *; }
 -keep class com.microsoft.schemas.** { *; }
 -keep class org.w3.x2000.** { *; }
@@ -105,25 +111,50 @@
 -dontwarn org.apache.xmlbeans.**
 -dontwarn org.openxmlformats.**
 
+# Apache Commons (used by POI)
+-keep class org.apache.commons.** { *; }
+-dontwarn org.apache.commons.**
+
 # ===================================================================
-# Apache Log4j (required by POI)
+# Apache Log4j2 (required by POI) - CRITICAL for Word docs
 # ===================================================================
 
+# Keep all Log4j2 classes
 -keep class org.apache.logging.log4j.** { *; }
--keep class org.apache.logging.log4j.spi.** { *; }
--keep class org.apache.logging.log4j.message.** { *; }
--keep class org.apache.logging.log4j.status.** { *; }
--keep class org.apache.logging.log4j.util.** { *; }
+-keep interface org.apache.logging.log4j.** { *; }
 -keepclassmembers class org.apache.logging.log4j.** {
     <init>(...);
     *;
 }
--dontwarn org.apache.logging.log4j.**
 
-# Keep Log4j message factories (fix for InstantiationException)
+# Keep Log4j2 core implementations
+-keep class org.apache.logging.log4j.core.** { *; }
+-keep class org.apache.logging.log4j.simple.** { *; }
+-keep class org.apache.logging.log4j.spi.** { *; }
+-keep class org.apache.logging.log4j.message.** { *; }
+-keep class org.apache.logging.log4j.status.** { *; }
+-keep class org.apache.logging.log4j.util.** { *; }
+
+# Keep ALL classes that extend/implement Log4j interfaces (fix InstantiationException)
 -keep class * extends org.apache.logging.log4j.message.MessageFactory { *; }
 -keep class * extends org.apache.logging.log4j.message.FlowMessageFactory { *; }
 -keep class * implements org.apache.logging.log4j.spi.Provider { *; }
+-keep class * implements org.apache.logging.log4j.message.MessageFactory { *; }
+-keep class * implements org.apache.logging.log4j.spi.LoggerContextFactory { *; }
+
+# Keep default message factory classes
+-keep class org.apache.logging.log4j.message.ParameterizedMessageFactory { *; }
+-keep class org.apache.logging.log4j.message.ReusableMessageFactory { *; }
+-keep class org.apache.logging.log4j.message.DefaultFlowMessageFactory { *; }
+
+# Keep LogManager and Logger
+-keep class org.apache.logging.log4j.LogManager { *; }
+-keep class org.apache.logging.log4j.Logger { *; }
+
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.apache.log4j.**
+
+# Additional dontwarn for POI dependencies
 -dontwarn org.etsi.**
 -dontwarn org.w3.**
 -dontwarn com.microsoft.**

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "1",
+    "medicineName": "Metformin",
+    "dosage": "500mg",
+    "frequency": "Twice daily",
+    "duration": "30 days",
+    "prescribedDate": "2026-03-25",
+    "doctorName": "Dr. Sarah Johnson",
+    "instructions": "Take with meals to reduce stomach upset",
+    "warnings": ["Avoid alcohol", "Monitor blood sugar regularly", "May cause diarrhea initially"]
+  },
+  {
+    "id": "2",
+    "medicineName": "Lisinopril",
+    "dosage": "10mg",
+    "frequency": "Once daily (morning)",
+    "duration": "30 days",
+    "prescribedDate": "2026-03-25",
+    "doctorName": "Dr. Sarah Johnson",
+    "instructions": "Take at the same time each day",
+    "warnings": ["May cause dizziness", "Avoid potassium supplements", "Report persistent cough"]
+  },
+  {
+    "id": "3",
+    "medicineName": "Atorvastatin",
+    "dosage": "20mg",
+    "frequency": "Once daily (evening)",
+    "duration": "30 days",
+    "prescribedDate": "2026-03-20",
+    "doctorName": "Dr. Michael Chen",
+    "instructions": "Take at bedtime for best results",
+    "warnings": ["Avoid grapefruit juice", "Report muscle pain", "Limit alcohol consumption"]
+  },
+  {
+    "id": "4",
+    "medicineName": "Omeprazole",
+    "dosage": "20mg",
+    "frequency": "Once daily (before breakfast)",
+    "duration": "14 days",
+    "prescribedDate": "2026-03-28",
+    "doctorName": "Dr. Emily Roberts",
+    "instructions": "Take 30 minutes before eating",
+    "warnings": ["Do not crush or chew", "Long-term use may affect vitamin B12"]
+  },
+  {
+    "id": "5",
+    "medicineName": "Amoxicillin",
+    "dosage": "500mg",
+    "frequency": "Three times daily",
+    "duration": "7 days",
+    "prescribedDate": "2026-03-29",
+    "doctorName": "Dr. Emily Roberts",
+    "instructions": "Complete the full course even if feeling better",
+    "warnings": ["May cause allergic reaction", "Take with or without food", "Avoid alcohol"]
+  },
+  {
+    "id": "6",
+    "medicineName": "Vitamin D3",
+    "dosage": "1000 IU",
+    "frequency": "Once daily",
+    "duration": "90 days",
+    "prescribedDate": "2026-03-15",
+    "doctorName": "Dr. Sarah Johnson",
+    "instructions": "Take with a fatty meal for better absorption",
+    "warnings": []
+  }
+]

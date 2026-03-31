@@ -1,6 +1,7 @@
 package com.documind.app
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -169,6 +170,11 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
                     onStartModelDownload = viewModel::startModelDownload,
                     onRequestCellularDownload = {
                         activity?.let { viewModel.requestCellularDownload(it) }
+                    },
+                    onPrescriptionDemoClick = {
+                        context.startActivity(
+                            Intent("com.documind.prescription.LAUNCH")
+                        )
                     },
                     modifier = Modifier.padding(innerPadding)
                 )

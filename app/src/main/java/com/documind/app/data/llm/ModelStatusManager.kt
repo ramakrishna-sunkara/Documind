@@ -124,9 +124,9 @@ class ModelStatusManager(private val context: Context) {
                 return
             }
             
-            // 3. Auto-start download
-            log("Model not found, starting download...")
-            startDownload()
+            // 3. Model not found - show appropriate message
+            log("Model not found locally")
+            _modelState.value = ModelState.Idle
             
         } catch (e: Exception) {
             logError("checkModelStatus failed", e)
@@ -158,8 +158,8 @@ class ModelStatusManager(private val context: Context) {
         
         val manager = assetPackManager
         if (manager == null) {
-            logError("AssetPackManager is null", null)
-            _modelState.value = ModelState.Error("Please install from Play Store")
+            log("AssetPackManager is null - non-Play Store build")
+            _modelState.value = ModelState.Error("Model not available in debug build")
             return
         }
         
@@ -168,8 +168,14 @@ class ModelStatusManager(private val context: Context) {
                 log("Download started")
             }
             .addOnFailureListener { e -> 
-                logError("Download failed: ${e.message}", e)
-                _modelState.value = ModelState.Error("Download failed. Check connection.")
+                val errorMsg = e.message ?: "Unknown error"
+                if (errorMsg.contains("API_NOT_AVAILABLE") || errorMsg.contains("-5")) {
+                    log("Asset Delivery not available (debug build): $errorMsg")
+                    _modelState.value = ModelState.Error("Use Play Store version for AI")
+                } else {
+                    logError("Download failed: $errorMsg", e)
+                    _modelState.value = ModelState.Error("Download failed. Check connection.")
+                }
             }
     }
     

@@ -55,11 +55,8 @@ class InAppUpdateManager(private val activity: Activity) {
                 handleUpdateInfo(updateInfo)
             }
             .addOnFailureListener { exception ->
-                Log.e(TAG, "Update check failed", exception)
-                _updateState.value = UpdateState.Error(exception.message ?: "Update check failed")
-                AnalyticsManager.logEvent("update_check_failed", mapOf(
-                    "error" to (exception.message ?: "Unknown")
-                ))
+                Log.w(TAG, "Update check failed (expected for non-Play builds): ${exception.message}")
+                _updateState.value = UpdateState.NotAvailable
             }
     }
     

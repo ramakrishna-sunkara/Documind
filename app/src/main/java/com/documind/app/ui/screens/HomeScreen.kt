@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -86,6 +87,7 @@ fun HomeScreen(
     onDismissError: () -> Unit,
     onStartModelDownload: () -> Unit = {},
     onRequestCellularDownload: () -> Unit = {},
+    onPrescriptionDemoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -134,14 +136,20 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Header with Offline badge and Support button
+            // Header with Offline badge and action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OfflineBadge()
-                SupportButton(onClick = { showSupportSheet = true })
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PrescriptionDemoButton(onClick = onPrescriptionDemoClick)
+                    SupportButton(onClick = { showSupportSheet = true })
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -443,6 +451,35 @@ private fun OfflineBadge() {
                     fontWeight = FontWeight.SemiBold
                 ),
                 color = OfflineBadge
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrescriptionDemoButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF10B981).copy(alpha = 0.15f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.LocalPharmacy,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = Color(0xFF10B981)
+            )
+            Text(
+                text = "Rx Demo",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = Color(0xFF10B981)
             )
         }
     }

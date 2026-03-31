@@ -25,4 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "Documind"
 include(":app")
 include(":model_pack")
+include(":prescription_demo")
  

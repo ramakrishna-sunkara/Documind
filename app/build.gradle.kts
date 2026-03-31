@@ -140,6 +140,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.fragment.ktx)
     
+    // Prescription Demo Module
+    implementation(project(":prescription_demo"))
+    
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

@@ -23,26 +23,26 @@ sealed class ModelState {
 }
 
 class ModelStatusManager(private val context: Context) {
-    
+
     companion object {
         private const val TAG = "ModelStatusManager"
         const val MODEL_PACK_NAME = "model_pack"
         // Actual filename from Kaggle: gemma3-1b-it-int4.task (555MB, INT4 quantized)
         const val MODEL_FILE_NAME = "gemma3-1b-it-int4.task"
     }
-    
+
     private var assetPackManager: AssetPackManager? = null
-    
+
     private val _modelState = MutableStateFlow<ModelState>(ModelState.Idle)
     val modelState: StateFlow<ModelState> = _modelState.asStateFlow()
-    
+
     private var modelPath: String? = null
     private var activityRef: Activity? = null
-    
+
     private fun log(message: String) {
         Log.d(TAG, message)
     }
-    
+
     private fun logError(message: String, e: Exception? = null) {
         Log.e(TAG, message, e)
         // Send to Crashlytics for debugging
@@ -54,9 +54,11 @@ class ModelStatusManager(private val context: Context) {
             } else {
                 crashlytics.recordException(Exception("ModelError: $message"))
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            log(e.message.toString())
+        }
     }
-    
+
     private val listener = AssetPackStateUpdateListener { state ->
         try {
             if (state.name() == MODEL_PACK_NAME) {
@@ -66,7 +68,7 @@ class ModelStatusManager(private val context: Context) {
             logError("Listener error", e)
         }
     }
-    
+
     init {
         try {
             assetPackManager = AssetPackManagerFactory.getInstance(context)
@@ -75,14 +77,14 @@ class ModelStatusManager(private val context: Context) {
             logError("AssetPackManager init failed", e)
         }
     }
-    
+
     fun setActivity(activity: Activity?) {
         activityRef = activity
     }
-    
+
     fun checkModelStatus() {
         log("Checking model status...")
-        
+
         try {
             // 1. Check asset pack location (already downloaded)
             val manager = assetPackManager
@@ -90,7 +92,7 @@ class ModelStatusManager(private val context: Context) {
                 val location = manager.getPackLocation(MODEL_PACK_NAME)
                 if (location != null) {
                     val assetsPath = location.assetsPath()
-                    
+
                     // Try exact filename
                     val exactPath = "$assetsPath/$MODEL_FILE_NAME"
                     if (File(exactPath).exists()) {
@@ -99,12 +101,12 @@ class ModelStatusManager(private val context: Context) {
                         log("Model ready: $exactPath")
                         return
                     }
-                    
+
                     // Search for .task file in assets folder
                     val assetsDir = File(assetsPath)
                     if (assetsDir.exists()) {
-                        val taskFile = assetsDir.listFiles()?.find { 
-                            it.name.endsWith(".task") && it.length() > 100_000_000 
+                        val taskFile = assetsDir.listFiles()?.find {
+                            it.name.endsWith(".task") && it.length() > 100_000_000
                         }
                         if (taskFile != null) {
                             modelPath = taskFile.absolutePath
@@ -115,7 +117,7 @@ class ModelStatusManager(private val context: Context) {
                     }
                 }
             }
-            
+
             // 2. Check local files
             checkLocalFiles()?.let {
                 modelPath = it
@@ -123,17 +125,17 @@ class ModelStatusManager(private val context: Context) {
                 log("Model ready from local: $it")
                 return
             }
-            
+
             // 3. Model not found - show appropriate message
             log("Model not found locally")
             _modelState.value = ModelState.Idle
-            
+
         } catch (e: Exception) {
             logError("checkModelStatus failed", e)
             _modelState.value = ModelState.Error("Failed to check model")
         }
     }
-    
+
     private fun checkLocalFiles(): String? {
         try {
             val locations = listOf(
@@ -141,7 +143,7 @@ class ModelStatusManager(private val context: Context) {
                 context.getExternalFilesDir(null)?.let { File(it, MODEL_FILE_NAME) },
                 File("/sdcard/Download", MODEL_FILE_NAME)
             )
-            
+
             for (file in locations) {
                 if (file?.exists() == true && file.length() > 100_000_000) {
                     return file.absolutePath
@@ -152,22 +154,22 @@ class ModelStatusManager(private val context: Context) {
         }
         return null
     }
-    
+
     fun startDownload() {
         _modelState.value = ModelState.Downloading(0)
-        
+
         val manager = assetPackManager
         if (manager == null) {
             log("AssetPackManager is null - non-Play Store build")
             _modelState.value = ModelState.Error("Model not available in debug build")
             return
         }
-        
+
         manager.fetch(listOf(MODEL_PACK_NAME))
-            .addOnSuccessListener { 
+            .addOnSuccessListener {
                 log("Download started")
             }
-            .addOnFailureListener { e -> 
+            .addOnFailureListener { e ->
                 val errorMsg = e.message ?: "Unknown error"
                 if (errorMsg.contains("API_NOT_AVAILABLE") || errorMsg.contains("-5")) {
                     log("Asset Delivery not available (debug build): $errorMsg")
@@ -178,7 +180,7 @@ class ModelStatusManager(private val context: Context) {
                 }
             }
     }
-    
+
     fun requestCellularDownload(activity: Activity) {
         try {
             assetPackManager?.showCellularDataConfirmation(activity)
@@ -186,12 +188,12 @@ class ModelStatusManager(private val context: Context) {
             Log.e(TAG, "Cellular request failed", e)
         }
     }
-    
+
     private fun handleState(state: AssetPackState) {
         val status = state.status()
         val bytes = state.bytesDownloaded()
         val total = state.totalBytesToDownload()
-        
+
         when (status) {
             AssetPackStatus.COMPLETED -> {
                 try {
@@ -201,10 +203,10 @@ class ModelStatusManager(private val context: Context) {
                         _modelState.value = ModelState.Error("Download error. Please retry.")
                         return
                     }
-                    
+
                     val assetsPath = loc.assetsPath()
                     log("Assets path: $assetsPath")
-                    
+
                     // Try direct path first
                     val directPath = "$assetsPath/$MODEL_FILE_NAME"
                     if (File(directPath).exists()) {
@@ -213,13 +215,13 @@ class ModelStatusManager(private val context: Context) {
                         log("Model ready at: $directPath")
                         return
                     }
-                    
+
                     // List files in assets folder to find the model
                     val assetsDir = File(assetsPath)
                     if (assetsDir.exists() && assetsDir.isDirectory) {
                         val files = assetsDir.listFiles()
                         log("Files in assets: ${files?.map { it.name }}")
-                        
+
                         // Find any .task file
                         val taskFile = files?.find { it.name.endsWith(".task") }
                         if (taskFile != null && taskFile.length() > 100_000_000) {
@@ -229,11 +231,11 @@ class ModelStatusManager(private val context: Context) {
                             return
                         }
                     }
-                    
+
                     // Log detailed error for debugging
                     logError("Model not found. assetsPath=$assetsPath, exists=${assetsDir.exists()}, files=${assetsDir.listFiles()?.size ?: 0}", null)
                     _modelState.value = ModelState.Error("Model file not found. Please retry.")
-                    
+
                 } catch (e: Exception) {
                     logError("Error accessing model: ${e.message}", e)
                     _modelState.value = ModelState.Error("Error accessing model")
@@ -273,9 +275,9 @@ class ModelStatusManager(private val context: Context) {
             }
         }
     }
-    
+
     fun getModelPath(): String? = modelPath
-    
+
     fun cleanup() {
         try {
             assetPackManager?.unregisterListener(listener)

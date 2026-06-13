@@ -3,8 +3,8 @@ package com.documind.app
 import android.app.Application
 import android.util.Log
 import com.documind.app.data.analytics.AnalyticsManager
+import com.documind.app.data.analytics.CrashAnalytics
 import com.google.firebase.FirebaseApp
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.messaging.FirebaseMessaging
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
@@ -22,6 +22,7 @@ class DocuMindApp : Application() {
         safeInit("Crashlytics") { initializeCrashlytics() }
         safeInit("PDFBox") { initializePdfBox() }
         safeInit("Analytics") { initializeAnalytics() }
+        safeInit("CrashSession") { initializeCrashSession() }
         safeInit("FCM") { subscribeFcmTopics() }
     }
     
@@ -37,16 +38,14 @@ class DocuMindApp : Application() {
     private fun initializeFirebase() {
         FirebaseApp.initializeApp(this)
     }
-    
+
     private fun initializeCrashlytics() {
-        try {
-            val crashlytics = FirebaseCrashlytics.getInstance()
-            crashlytics.isCrashlyticsCollectionEnabled = !BuildConfig.DEBUG
-            crashlytics.setCustomKey("app_version", BuildConfig.VERSION_NAME)
-            crashlytics.setCustomKey("build_type", if (BuildConfig.DEBUG) "debug" else "release")
-        } catch (e: Exception) {
-            Log.e(TAG, "Crashlytics setup error: ${e.message}")
-        }
+        CrashAnalytics.initialize(this)
+    }
+
+    private fun initializeCrashSession() {
+        CrashAnalytics.reportSessionStart(this)
+        CrashAnalytics.sendVerificationIfNeeded(this)
     }
     
     private fun initializePdfBox() {

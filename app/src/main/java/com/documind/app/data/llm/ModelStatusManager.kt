@@ -3,12 +3,12 @@ package com.documind.app.data.llm
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import com.documind.app.data.analytics.CrashAnalytics
 import com.google.android.play.core.assetpacks.AssetPackManager
 import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.google.android.play.core.assetpacks.AssetPackState
 import com.google.android.play.core.assetpacks.AssetPackStateUpdateListener
 import com.google.android.play.core.assetpacks.model.AssetPackStatus
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,258 +23,254 @@ sealed class ModelState {
 }
 
 class ModelStatusManager(private val context: Context) {
-    
+
     companion object {
         private const val TAG = "ModelStatusManager"
-        const val MODEL_PACK_NAME = "model_pack"
-        // Actual filename from Kaggle: gemma3-1b-it-int4.task (555MB, INT4 quantized)
-        const val MODEL_FILE_NAME = "gemma3-1b-it-int4.task"
+        const val MODEL_PACK_NAME = ModelAssetConstants.MODEL_PACK_NAME
+        const val MODEL_FILE_NAME = ModelAssetConstants.LLM_FILE_NAME
+        const val GECKO_MODEL_FILE_NAME = ModelAssetConstants.GECKO_MODEL_FILE_NAME
+        const val TOKENIZER_FILE_NAME = ModelAssetConstants.TOKENIZER_FILE_NAME
     }
-    
+
     private var assetPackManager: AssetPackManager? = null
-    
     private val _modelState = MutableStateFlow<ModelState>(ModelState.Idle)
     val modelState: StateFlow<ModelState> = _modelState.asStateFlow()
-    
     private var modelPath: String? = null
+    private var geckoModelPath: String? = null
+    private var tokenizerPath: String? = null
     private var activityRef: Activity? = null
-    
-    private fun log(message: String) {
-        Log.d(TAG, message)
-    }
-    
-    private fun logError(message: String, e: Exception? = null) {
-        Log.e(TAG, message, e)
-        // Send to Crashlytics for debugging
-        try {
-            val crashlytics = FirebaseCrashlytics.getInstance()
-            crashlytics.log("$TAG: $message")
-            if (e != null) {
-                crashlytics.recordException(e)
-            } else {
-                crashlytics.recordException(Exception("ModelError: $message"))
-            }
-        } catch (_: Exception) {}
-    }
-    
+
     private val listener = AssetPackStateUpdateListener { state ->
         try {
             if (state.name() == MODEL_PACK_NAME) {
                 handleState(state)
             }
-        } catch (e: Exception) {
-            logError("Listener error", e)
+        } catch (throwable: Throwable) {
+            logError("Asset pack listener failed", throwable)
         }
     }
-    
+
     init {
         try {
             assetPackManager = AssetPackManagerFactory.getInstance(context)
             assetPackManager?.registerListener(listener)
-        } catch (e: Exception) {
-            logError("AssetPackManager init failed", e)
+            CrashAnalytics.log("ModelStatusManager initialized")
+        } catch (throwable: Throwable) {
+            logError("AssetPackManager init failed", throwable)
         }
     }
-    
+
     fun setActivity(activity: Activity?) {
         activityRef = activity
     }
-    
+
     fun checkModelStatus() {
-        log("Checking model status...")
-        
+        CrashAnalytics.logModelDownloadPhase("check_status", "started")
         try {
-            // 1. Check asset pack location (already downloaded)
             val manager = assetPackManager
-            if (manager != null) {
-                val location = manager.getPackLocation(MODEL_PACK_NAME)
-                if (location != null) {
-                    val assetsPath = location.assetsPath()
-                    
-                    // Try exact filename
-                    val exactPath = "$assetsPath/$MODEL_FILE_NAME"
-                    if (File(exactPath).exists()) {
-                        modelPath = exactPath
-                        _modelState.value = ModelState.Ready
-                        log("Model ready: $exactPath")
-                        return
-                    }
-                    
-                    // Search for .task file in assets folder
-                    val assetsDir = File(assetsPath)
-                    if (assetsDir.exists()) {
-                        val taskFile = assetsDir.listFiles()?.find { 
-                            it.name.endsWith(".task") && it.length() > 100_000_000 
-                        }
-                        if (taskFile != null) {
-                            modelPath = taskFile.absolutePath
-                            _modelState.value = ModelState.Ready
-                            log("Model ready: ${taskFile.absolutePath}")
-                            return
-                        }
-                    }
-                }
-            }
-            
-            // 2. Check local files
-            checkLocalFiles()?.let {
-                modelPath = it
-                _modelState.value = ModelState.Ready
-                log("Model ready from local: $it")
+            if (manager == null) {
+                setError("AI models are delivered via Play Store. Please install DocuMind from Google Play.")
                 return
             }
-            
-            // 3. Auto-start download
-            log("Model not found, starting download...")
-            startDownload()
-            
-        } catch (e: Exception) {
-            logError("checkModelStatus failed", e)
-            _modelState.value = ModelState.Error("Failed to check model")
-        }
-    }
-    
-    private fun checkLocalFiles(): String? {
-        try {
-            val locations = listOf(
-                File(context.filesDir, MODEL_FILE_NAME),
-                context.getExternalFilesDir(null)?.let { File(it, MODEL_FILE_NAME) },
-                File("/sdcard/Download", MODEL_FILE_NAME)
-            )
-            
-            for (file in locations) {
-                if (file?.exists() == true && file.length() > 100_000_000) {
-                    return file.absolutePath
+            val assetsPath = manager.getPackLocation(MODEL_PACK_NAME)?.assetsPath()
+            if (assetsPath != null) {
+                CrashAnalytics.log("Asset pack path found: $assetsPath")
+                resolveModelsFromAssetPack(File(assetsPath))?.let { assets ->
+                    applyResolvedModels(assets)
+                    return
                 }
+                CrashAnalytics.log("Asset pack incomplete, requesting download")
+            } else {
+                CrashAnalytics.log("Asset pack not installed yet")
             }
-        } catch (e: Exception) {
-            logError("checkLocalFiles failed", e)
+            startDownload()
+        } catch (throwable: Throwable) {
+            logError("checkModelStatus failed", throwable)
+            setError("Failed to check AI models")
         }
-        return null
     }
-    
+
     fun startDownload() {
         _modelState.value = ModelState.Downloading(0)
-        
+        CrashAnalytics.logModelDownloadPhase("download_requested", "fetch")
         val manager = assetPackManager
         if (manager == null) {
-            logError("AssetPackManager is null", null)
-            _modelState.value = ModelState.Error("Please install from Play Store")
+            setError("AI models are delivered via Play Store. Please install DocuMind from Google Play.")
             return
         }
-        
         manager.fetch(listOf(MODEL_PACK_NAME))
-            .addOnSuccessListener { 
-                log("Download started")
+            .addOnSuccessListener {
+                CrashAnalytics.log("Play Asset Delivery fetch started")
             }
-            .addOnFailureListener { e -> 
-                logError("Download failed: ${e.message}", e)
-                _modelState.value = ModelState.Error("Download failed. Check connection.")
+            .addOnFailureListener { error ->
+                logError("Download fetch failed", error)
+                setError("Could not download AI models. Install or update DocuMind from Google Play.")
             }
     }
-    
+
     fun requestCellularDownload(activity: Activity) {
         try {
             assetPackManager?.showCellularDataConfirmation(activity)
-        } catch (e: Exception) {
-            Log.e(TAG, "Cellular request failed", e)
+        } catch (throwable: Throwable) {
+            logError("Cellular request failed", throwable)
         }
     }
-    
+
+    fun getModelPath(): String? = modelPath
+
+    fun getGeckoModelPath(): String? = geckoModelPath
+
+    fun getTokenizerPath(): String? = tokenizerPath
+
+    fun cleanup() {
+        try {
+            assetPackManager?.unregisterListener(listener)
+        } catch (throwable: Throwable) {
+            logError("Cleanup failed", throwable)
+        }
+    }
+
+    private fun applyResolvedModels(assets: ResolvedModelAssets) {
+        modelPath = assets.llmPath
+        geckoModelPath = assets.geckoPath
+        tokenizerPath = assets.tokenizerPath
+        CrashAnalytics.logResolvedModelFiles(assets.llmPath, assets.geckoPath, assets.tokenizerPath)
+        CrashAnalytics.logModelDownloadPhase("models_ready", "completed", progress = 100)
+        _modelState.value = ModelState.Ready
+        Log.d(TAG, "All Play Asset Delivery models ready")
+    }
+
+    private fun resolveModelsFromAssetPack(directory: File): ResolvedModelAssets? {
+        if (!directory.exists() || !directory.isDirectory) {
+            CrashAnalytics.log("Asset pack directory missing: ${directory.absolutePath}")
+            return null
+        }
+        val files = try {
+            directory.listFiles()?.associateBy { file -> file.name } ?: emptyMap()
+        } catch (throwable: Throwable) {
+            logError("Failed to list asset pack files", throwable)
+            return null
+        }
+        CrashAnalytics.log("Asset pack files: ${files.keys.sorted()}")
+        val llmFile = files[MODEL_FILE_NAME]?.takeIf { file ->
+            file.length() >= ModelAssetConstants.MIN_LLM_SIZE_BYTES
+        } ?: files.values.firstOrNull { file ->
+            file.name.endsWith(".task") && file.length() >= ModelAssetConstants.MIN_LLM_SIZE_BYTES
+        }
+        val geckoFile = files[GECKO_MODEL_FILE_NAME]?.takeIf { file ->
+            file.length() >= ModelAssetConstants.MIN_GECKO_SIZE_BYTES
+        } ?: files.values.firstOrNull { file ->
+            file.name.endsWith(".tflite") && file.length() >= ModelAssetConstants.MIN_GECKO_SIZE_BYTES
+        }
+        val tokenizerFile = files[TOKENIZER_FILE_NAME]?.takeIf { file ->
+            file.length() > 0L
+        }
+        CrashAnalytics.logResolvedModelFiles(
+            llmPath = llmFile?.absolutePath,
+            geckoPath = geckoFile?.absolutePath,
+            tokenizerPath = tokenizerFile?.absolutePath
+        )
+        if (llmFile == null || geckoFile == null || tokenizerFile == null) {
+            val missingFiles = buildList {
+                if (llmFile == null) add(MODEL_FILE_NAME)
+                if (geckoFile == null) add(GECKO_MODEL_FILE_NAME)
+                if (tokenizerFile == null) add(TOKENIZER_FILE_NAME)
+            }
+            logError("Missing model files in asset pack: $missingFiles", null)
+            setError("AI model update required. Please update DocuMind from Google Play.")
+            return null
+        }
+        return ResolvedModelAssets(
+            llmPath = llmFile.absolutePath,
+            geckoPath = geckoFile.absolutePath,
+            tokenizerPath = tokenizerFile.absolutePath
+        )
+    }
+
     private fun handleState(state: AssetPackState) {
         val status = state.status()
         val bytes = state.bytesDownloaded()
         val total = state.totalBytesToDownload()
-        
+        val progress = if (total > 0) ((bytes * 100) / total).toInt() else 0
+        CrashAnalytics.recordDeviceMemory(context)
+        CrashAnalytics.logModelDownloadPhase(
+            phase = "asset_pack_update",
+            status = status.toString(),
+            progress = progress,
+            bytesDownloaded = bytes,
+            totalBytes = total
+        )
         when (status) {
             AssetPackStatus.COMPLETED -> {
                 try {
-                    val loc = assetPackManager?.getPackLocation(MODEL_PACK_NAME)
-                    if (loc == null) {
-                        logError("Pack location is null after COMPLETED", null)
-                        _modelState.value = ModelState.Error("Download error. Please retry.")
+                    CrashAnalytics.log("Asset pack COMPLETED - resolving models")
+                    val assetsPath = assetPackManager?.getPackLocation(MODEL_PACK_NAME)?.assetsPath()
+                    if (assetsPath == null) {
+                        setError("Download error. Please retry from Google Play.")
                         return
                     }
-                    
-                    val assetsPath = loc.assetsPath()
-                    log("Assets path: $assetsPath")
-                    
-                    // Try direct path first
-                    val directPath = "$assetsPath/$MODEL_FILE_NAME"
-                    if (File(directPath).exists()) {
-                        modelPath = directPath
-                        _modelState.value = ModelState.Ready
-                        log("Model ready at: $directPath")
-                        return
+                    resolveModelsFromAssetPack(File(assetsPath))?.let { assets ->
+                        applyResolvedModels(assets)
                     }
-                    
-                    // List files in assets folder to find the model
-                    val assetsDir = File(assetsPath)
-                    if (assetsDir.exists() && assetsDir.isDirectory) {
-                        val files = assetsDir.listFiles()
-                        log("Files in assets: ${files?.map { it.name }}")
-                        
-                        // Find any .task file
-                        val taskFile = files?.find { it.name.endsWith(".task") }
-                        if (taskFile != null && taskFile.length() > 100_000_000) {
-                            modelPath = taskFile.absolutePath
-                            _modelState.value = ModelState.Ready
-                            log("Model found: ${taskFile.absolutePath}")
-                            return
-                        }
-                    }
-                    
-                    // Log detailed error for debugging
-                    logError("Model not found. assetsPath=$assetsPath, exists=${assetsDir.exists()}, files=${assetsDir.listFiles()?.size ?: 0}", null)
-                    _modelState.value = ModelState.Error("Model file not found. Please retry.")
-                    
-                } catch (e: Exception) {
-                    logError("Error accessing model: ${e.message}", e)
-                    _modelState.value = ModelState.Error("Error accessing model")
+                } catch (throwable: Throwable) {
+                    logError("COMPLETED handler failed", throwable)
+                    setError("Error accessing AI models")
                 }
             }
             AssetPackStatus.DOWNLOADING, AssetPackStatus.PENDING -> {
-                val progress = if (total > 0) ((bytes * 100) / total).toInt() else 0
                 _modelState.value = ModelState.Downloading(progress)
             }
             AssetPackStatus.TRANSFERRING -> {
+                CrashAnalytics.log("Asset pack TRANSFERRING at 99%")
                 _modelState.value = ModelState.Downloading(99)
             }
             AssetPackStatus.WAITING_FOR_WIFI -> {
                 _modelState.value = ModelState.WaitingForWifi
-                // Auto-show cellular confirmation dialog
                 activityRef?.let { activity ->
                     try {
                         assetPackManager?.showCellularDataConfirmation(activity)
-                    } catch (e: Exception) {
-                        log("Could not show cellular dialog: ${e.message}")
+                    } catch (throwable: Throwable) {
+                        logError("Cellular dialog failed", throwable)
                     }
                 }
             }
             AssetPackStatus.FAILED -> {
-                val errorCode = state.errorCode()
-                logError("Download failed: code=$errorCode", null)
-                _modelState.value = ModelState.Error("Download failed. Tap to retry.")
+                logError("Asset pack FAILED code=${state.errorCode()}", null)
+                setError("Download failed. Tap to retry.")
             }
             AssetPackStatus.NOT_INSTALLED -> {
                 startDownload()
             }
             AssetPackStatus.CANCELED -> {
-                _modelState.value = ModelState.Error("Download canceled. Tap to retry.")
+                setError("Download canceled. Tap to retry.")
             }
             else -> {
-                log("Unknown status: $status")
+                CrashAnalytics.log("Unknown asset pack status: $status")
             }
         }
     }
-    
-    fun getModelPath(): String? = modelPath
-    
-    fun cleanup() {
-        try {
-            assetPackManager?.unregisterListener(listener)
-        } catch (e: Exception) {
-            Log.e(TAG, "Cleanup error", e)
+
+    private fun setError(message: String) {
+        _modelState.value = ModelState.Error(message)
+        CrashAnalytics.recordNonFatal(
+            throwable = IllegalStateException(message),
+            phase = "model_status_error"
+        )
+    }
+
+    private fun logError(message: String, throwable: Throwable?) {
+        Log.e(TAG, message, throwable)
+        CrashAnalytics.log("ModelStatusManager error: $message")
+        if (throwable != null) {
+            CrashAnalytics.recordNonFatal(throwable, "model_status_manager")
+        } else {
+            CrashAnalytics.recordNonFatal(IllegalStateException(message), "model_status_manager")
         }
     }
+
+    private data class ResolvedModelAssets(
+        val llmPath: String,
+        val geckoPath: String,
+        val tokenizerPath: String
+    )
 }

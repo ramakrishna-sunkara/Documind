@@ -112,6 +112,11 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_launcher_foreground" />
+
+        <!-- Explicitly enable Crashlytics in all builds -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" />
         
     </application>
 

@@ -50,6 +50,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.LaunchedEffect
+import com.documind.app.data.analytics.CrashAnalytics
 import com.documind.app.data.llm.ModelState
 import com.documind.app.ui.theme.GradientEnd
 import com.documind.app.ui.theme.GradientMiddle
@@ -78,6 +80,13 @@ fun LoadingScreen(
     var showSkipButton by remember { mutableStateOf(false) }
     
     LaunchedEffect(modelState) {
+        if (modelState is ModelState.Downloading && modelState.progress >= 99) {
+            CrashAnalytics.logModelDownloadPhase(
+                phase = "ui_downloading_99",
+                status = "transferring",
+                progress = modelState.progress
+            )
+        }
         when {
             modelState is ModelState.Idle || 
             (modelState is ModelState.Downloading && modelState.progress == 0) -> {
@@ -266,7 +275,7 @@ fun LoadingScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             Text(
-                                text = "The AI model (~500MB) will download when connected to WiFi.",
+                                text = "AI models (~670MB) download automatically after install from Google Play.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
                                 textAlign = TextAlign.Center

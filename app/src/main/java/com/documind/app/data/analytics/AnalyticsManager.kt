@@ -27,7 +27,18 @@ object AnalyticsManager {
     
     // App Lifecycle Events
     fun logAppOpen() {
-        logEvent(Events.APP_OPEN)
+        logEvent(Events.APP_OPEN, Bundle().apply {
+            putString(Params.APP_VERSION, BuildConfig.VERSION_NAME)
+            putInt(Params.VERSION_CODE, BuildConfig.VERSION_CODE)
+        })
+    }
+
+    fun logCrashlyticsSession(versionName: String, versionCode: Int) {
+        setUserProperty(UserProperties.APP_VERSION, versionName)
+        logEvent(Events.CRASHLYTICS_SESSION, Bundle().apply {
+            putString(Params.APP_VERSION, versionName)
+            putInt(Params.VERSION_CODE, versionCode)
+        })
     }
     
     fun logAppBackground() {
@@ -146,6 +157,7 @@ object AnalyticsManager {
     object Events {
         const val APP_OPEN = "app_open"
         const val APP_BACKGROUND = "app_background"
+        const val CRASHLYTICS_SESSION = "crashlytics_session"
         
         const val DOCUMENT_LOADED = "document_loaded"
         const val DOCUMENT_EXTRACTION_FAILED = "document_extraction_failed"
@@ -174,6 +186,8 @@ object AnalyticsManager {
         const val RESPONSE_LENGTH = "response_length"
         const val DURATION_MS = "duration_ms"
         const val ERROR_MESSAGE = "error_message"
+        const val APP_VERSION = "app_version"
+        const val VERSION_CODE = "version_code"
     }
     
     // User Properties
@@ -181,5 +195,6 @@ object AnalyticsManager {
         const val DOCUMENTS_PROCESSED = "documents_processed"
         const val QUERIES_SENT = "queries_sent"
         const val PREFERRED_SOURCE = "preferred_source"
+        const val APP_VERSION = "app_version"
     }
 }

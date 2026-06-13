@@ -26,11 +26,11 @@ import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
@@ -60,16 +60,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.documind.app.data.analytics.CrashAnalytics
 import com.documind.app.data.llm.ModelState
 import com.documind.app.domain.model.ExtractionState
+import com.documind.app.ui.components.AiStatusPill
+import com.documind.app.ui.components.ErrorDialog
 import com.documind.app.ui.components.SourceCard
 import com.documind.app.ui.components.SourceCardColors
-import com.documind.app.ui.components.SupportBottomSheet
-import com.documind.app.ui.components.SupportButton
-import com.documind.app.ui.theme.GradientEnd
-import com.documind.app.ui.theme.GradientMiddle
-import com.documind.app.ui.theme.GradientStart
-import com.documind.app.ui.theme.OfflineBadge
+import com.documind.app.ui.components.TryDemoCard
+import com.documind.app.ui.components.TrustBadgesRow
+import com.documind.app.ui.theme.DocumindDimens
+import com.documind.app.ui.theme.DocumindGradients
+import com.documind.app.ui.theme.PrivacyNoteBackground
 import com.documind.app.ui.theme.SuccessGreen
 import com.documind.app.ui.theme.WarningAmber
 
@@ -86,14 +88,15 @@ fun HomeScreen(
     onDismissError: () -> Unit,
     onStartModelDownload: () -> Unit = {},
     onRequestCellularDownload: () -> Unit = {},
+    onLoadDemoDocument: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var showUrlDialog by remember { mutableStateOf(false) }
     var showTextDialog by remember { mutableStateOf(false) }
-    var showSupportSheet by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var textInput by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
     
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -103,6 +106,12 @@ fun HomeScreen(
                 val inputStream = context.contentResolver.openInputStream(it)
                 if (inputStream != null) {
                     onExtractPdf(inputStream, "Document.pdf")
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Could not open the PDF file. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Failed to open PDF", Toast.LENGTH_SHORT).show()
@@ -118,6 +127,12 @@ fun HomeScreen(
                 val inputStream = context.contentResolver.openInputStream(it)
                 if (inputStream != null) {
                     onExtractDocx(inputStream, "Document.docx")
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Could not open the Word file. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Failed to open Word document", Toast.LENGTH_SHORT).show()
@@ -129,56 +144,48 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Header with Offline badge and Support button
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OfflineBadge()
-                SupportButton(onClick = { showSupportSheet = true })
+                if (isLlmReady) {
+                    AiStatusPill()
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // AI Model Status Banner
-            ModelStatusBanner(
-                modelState = modelState,
-                isLlmReady = isLlmReady,
-                onDownloadClick = onStartModelDownload,
-                onCellularClick = onRequestCellularDownload
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
+            Spacer(modifier = Modifier.height(12.dp))
+            TrustBadgesRow(modifier = Modifier.fillMaxWidth())
+            if (!isLlmReady) {
+                Spacer(modifier = Modifier.height(12.dp))
+                ModelStatusBanner(
+                    modelState = modelState,
+                    isLlmReady = isLlmReady,
+                    onDownloadClick = onStartModelDownload,
+                    onCellularClick = onRequestCellularDownload
+                )
+            }
+            Spacer(modifier = Modifier.height(28.dp))
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(88.dp)
                     .clip(CircleShape)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(GradientStart, GradientMiddle, GradientEnd)
-                        )
-                    ),
+                    .background(brush = DocumindGradients.brand()),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "D",
                     style = MaterialTheme.typography.displaySmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 36.sp
+                        fontSize = 40.sp
                     ),
                     color = Color.White
                 )
             }
-            
             Spacer(modifier = Modifier.height(16.dp))
-            
             Text(
                 text = "DocuMind",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -186,29 +193,50 @@ fun HomeScreen(
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
             Spacer(modifier = Modifier.height(8.dp))
-            
             Text(
-                text = "Select a document source to begin",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "Chat with your documents — privately, on your phone",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
-            
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Zero cloud upload. Powered by on-device AI.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
             Spacer(modifier = Modifier.height(24.dp))
-            
+            if (extractionState !is ExtractionState.Extracting) {
+                TryDemoCard(onClick = onLoadDemoDocument)
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Or choose a source",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
             if (extractionState is ExtractionState.Extracting) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(DocumindDimens.CardRadius),
                     color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.padding(32.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator(
-                            color = GradientMiddle,
+                            color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 3.dp
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -229,12 +257,14 @@ fun HomeScreen(
                     SourceCard(
                         icon = Icons.Default.PictureAsPdf,
                         label = "PDF",
+                        subtitle = "Contracts, reports",
                         onClick = { pdfLauncher.launch(arrayOf("application/pdf")) },
                         accentColor = SourceCardColors.PDF
                     )
                     SourceCard(
                         icon = Icons.Default.Description,
                         label = "Word",
+                        subtitle = "DOCX files",
                         onClick = {
                             docxLauncher.launch(
                                 arrayOf(
@@ -245,9 +275,7 @@ fun HomeScreen(
                         accentColor = SourceCardColors.Word
                     )
                 }
-                
                 Spacer(modifier = Modifier.height(16.dp))
-                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -255,22 +283,21 @@ fun HomeScreen(
                     SourceCard(
                         icon = Icons.Default.Link,
                         label = "URL",
+                        subtitle = "Web articles",
                         onClick = { showUrlDialog = true },
                         accentColor = SourceCardColors.URL
                     )
                     SourceCard(
                         icon = Icons.Default.ContentPaste,
                         label = "Text",
+                        subtitle = "Paste content",
                         onClick = { showTextDialog = true },
                         accentColor = SourceCardColors.Text
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
+            Spacer(modifier = Modifier.height(24.dp))
             PrivacyNote()
-            
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -305,7 +332,9 @@ fun HomeScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (urlInput.isNotBlank()) {
+                        if (urlInput.isBlank()) {
+                            Toast.makeText(context, "Please enter a website URL.", Toast.LENGTH_SHORT).show()
+                        } else {
                             val url = if (!urlInput.startsWith("http")) {
                                 "https://$urlInput"
                             } else {
@@ -360,7 +389,9 @@ fun HomeScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (textInput.isNotBlank()) {
+                        if (textInput.isBlank()) {
+                            Toast.makeText(context, "Please paste some text first.", Toast.LENGTH_SHORT).show()
+                        } else {
                             onExtractText(textInput)
                             showTextDialog = false
                             textInput = ""
@@ -380,91 +411,32 @@ fun HomeScreen(
     }
     
     if (extractionState is ExtractionState.Error) {
-        AlertDialog(
-            onDismissRequest = onDismissError,
-            shape = RoundedCornerShape(20.dp),
-            title = {
-                Text(
-                    "Extraction Error",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = MaterialTheme.colorScheme.error
-                )
-            },
-            text = { Text(extractionState.message) },
-            confirmButton = {
-                Button(
-                    onClick = onDismissError,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("OK", fontWeight = FontWeight.SemiBold)
-                }
-            }
+        ErrorDialog(
+            title = "Could Not Open Document",
+            message = extractionState.message,
+            onDismiss = onDismissError
         )
     }
     
-    // Support/Donate bottom sheet
-    if (showSupportSheet) {
-        SupportBottomSheet(
-            onDismiss = { showSupportSheet = false }
-        )
-    }
-}
-
-@Composable
-private fun OfflineBadge() {
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = OfflineBadge.copy(alpha = 0.12f)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(OfflineBadge, CircleShape)
-            )
-            Icon(
-                imageVector = Icons.Default.CloudOff,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = OfflineBadge
-            )
-            Text(
-                text = "Works 100% Offline",
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = OfflineBadge
-            )
-        }
-    }
 }
 
 @Composable
 private fun PrivacyNote() {
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(DocumindDimens.ChipRadius),
+        color = PrivacyNoteBackground,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Security,
+                imageVector = Icons.Default.Lock,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(22.dp),
+                tint = MaterialTheme.colorScheme.tertiary
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -474,8 +446,9 @@ private fun PrivacyNote() {
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "All processing happens on your device. Your documents never leave your phone.",
+                    text = "All AI processing happens on your device. Documents never leave your phone — ideal for legal, financial, and confidential content.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -493,6 +466,15 @@ private fun ModelStatusBanner(
 ) {
     val isError = modelState is ModelState.Error
     val errorMessage = if (isError) (modelState as ModelState.Error).message else ""
+    LaunchedEffect(modelState) {
+        if (modelState is ModelState.Downloading && modelState.progress >= 99) {
+            CrashAnalytics.logModelDownloadPhase(
+                phase = "home_ui_downloading_99",
+                status = "transferring",
+                progress = modelState.progress
+            )
+        }
+    }
     
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -545,7 +527,7 @@ private fun ModelStatusBanner(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Downloading AI Model...",
+                            text = "Downloading AI Models...",
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f)
@@ -638,7 +620,7 @@ private fun ModelStatusBanner(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Tap to download AI Model (~500MB)",
+                        text = "Tap to download AI models (~670MB)",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)

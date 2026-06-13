@@ -11,12 +11,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,29 +33,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.documind.app.domain.model.ChatMessage
-import com.documind.app.ui.theme.GradientEnd
+import com.documind.app.ui.theme.DocumindDimens
+import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.GradientMiddle
-import com.documind.app.ui.theme.GradientStart
+import com.documind.app.ui.theme.ErrorRed
+import com.documind.app.ui.theme.OnDeviceBadge
 
 @Composable
 fun MessageBubble(
     message: ChatMessage,
     modifier: Modifier = Modifier
 ) {
-    val isUser = message.isUser
-    val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
-    
+    val isUser: Boolean = message.isUser
+    val isErrorMessage: Boolean = !isUser && message.isError
+    val isInfoMessage: Boolean = !isUser && message.isInfo
+    val bubbleRadius = DocumindDimens.BubbleRadius
     val shape = if (isUser) {
-        RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
+        RoundedCornerShape(bubbleRadius, bubbleRadius, 4.dp, bubbleRadius)
     } else {
-        RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp)
+        RoundedCornerShape(bubbleRadius, bubbleRadius, bubbleRadius, 4.dp)
     }
-    
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
@@ -57,34 +65,23 @@ fun MessageBubble(
             Text(
                 text = "DocuMind",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)
             )
         }
-        
-        Box(
-            modifier = Modifier.widthIn(max = 300.dp)
-        ) {
+        Box(modifier = Modifier.widthIn(max = 320.dp)) {
             if (isUser) {
                 Surface(
                     shape = shape,
                     modifier = Modifier
                         .clip(shape)
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(GradientStart, GradientMiddle)
-                            )
-                        )
+                        .background(brush = DocumindGradients.userMessage())
                 ) {
                     Box(
                         modifier = Modifier
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(GradientStart, GradientMiddle)
-                                )
-                            )
+                            .background(brush = DocumindGradients.userMessage())
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
@@ -97,20 +94,68 @@ fun MessageBubble(
             } else {
                 Surface(
                     shape = shape,
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shadowElevation = 1.dp
+                    color = when {
+                        isErrorMessage -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.92f)
+                        isInfoMessage -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        else -> MaterialTheme.colorScheme.surfaceContainer
+                    },
+                    shadowElevation = if (isErrorMessage || isInfoMessage) 0.dp else 2.dp
                 ) {
-                    if (message.isLoading) {
-                        LoadingDots(
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
-                        )
-                    } else {
-                        Text(
-                            text = message.content,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                        )
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        if (message.isLoading) {
+                            Text(
+                                text = "Thinking on your device...",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            LoadingDots()
+                        } else {
+                            if (isErrorMessage || isInfoMessage) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isErrorMessage) {
+                                            Icons.Default.ErrorOutline
+                                        } else {
+                                            Icons.Default.Info
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isErrorMessage) ErrorRed else MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = if (isErrorMessage) "Something went wrong" else "Please wait",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        color = if (isErrorMessage) {
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        }
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                            Text(
+                                text = message.content,
+                                color = when {
+                                    isErrorMessage -> MaterialTheme.colorScheme.onErrorContainer
+                                    isInfoMessage -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            if (!isErrorMessage && !isInfoMessage) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OnDeviceFooter()
+                            }
+                        }
                     }
                 }
             }
@@ -119,9 +164,28 @@ fun MessageBubble(
 }
 
 @Composable
+private fun OnDeviceFooter() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Memory,
+            contentDescription = null,
+            modifier = Modifier.size(12.dp),
+            tint = OnDeviceBadge
+        )
+        Text(
+            text = "Processed on device",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+        )
+    }
+}
+
+@Composable
 private fun LoadingDots(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "loading")
-    
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -137,15 +201,11 @@ private fun LoadingDots(modifier: Modifier = Modifier) {
                 ),
                 label = "dot$index"
             )
-            
             Box(
                 modifier = Modifier
-                    .size(10.dp)
+                    .size(8.dp)
                     .alpha(alpha)
-                    .background(
-                        color = GradientMiddle,
-                        shape = CircleShape
-                    )
+                    .background(color = GradientMiddle, shape = CircleShape)
             )
         }
     }

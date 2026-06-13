@@ -6,31 +6,44 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.documind.app.data.llm.ModelState
+import com.documind.app.data.analytics.CrashAnalytics
 import com.documind.app.data.update.InAppUpdateManager
 import com.documind.app.data.update.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.documind.app.domain.model.ExtractionState
 import com.documind.app.domain.model.UiScreen
 import com.documind.app.ui.screens.ChatScreen
 import com.documind.app.ui.screens.HomeScreen
 import com.documind.app.ui.screens.LoadingScreen
+import com.documind.app.ui.screens.OnboardingScreen
+import com.documind.app.ui.theme.DocumindScreenBackground
 import com.documind.app.ui.theme.DocumindTheme
 import com.documind.app.ui.viewmodel.DocuMindViewModel
 
@@ -46,6 +59,7 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashAnalytics.log("MainActivity onCreate")
         
         try {
             // Initialize In-App Update Manager
@@ -84,6 +98,7 @@ class MainActivity : ComponentActivity() {
     }
     
     override fun onDestroy() {
+        CrashAnalytics.log("MainActivity onDestroy")
         super.onDestroy()
         try {
             if (::inAppUpdateManager.isInitialized) {
@@ -141,10 +156,12 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
+        DocumindScreenBackground(modifier = Modifier.padding(innerPadding)) {
         when (currentScreen) {
             is UiScreen.Loading -> {
                 LoadingScreen(
@@ -154,6 +171,14 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
                         activity?.let { viewModel.requestCellularDownload(it) }
                     },
                     modifier = Modifier.padding(innerPadding)
+                )
+            }
+            is UiScreen.Onboarding -> {
+                OnboardingScreen(
+                    extractionState = extractionState,
+                    onComplete = viewModel::completeOnboarding,
+                    onTryDemo = viewModel::completeOnboardingAndTryDemo,
+                    onDismissError = viewModel::dismissExtractionError
                 )
             }
             is UiScreen.Home -> {
@@ -170,20 +195,55 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
                     onRequestCellularDownload = {
                         activity?.let { viewModel.requestCellularDownload(it) }
                     },
+                    onLoadDemoDocument = viewModel::loadDemoDocument,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
             is UiScreen.Chat -> {
-                currentDocument?.let { document ->
+                val document = currentDocument
+                if (document != null) {
                     ChatScreen(
                         document = document,
                         messages = messages,
                         queryState = queryState,
+                        extractionState = extractionState,
                         onSendQuery = viewModel::sendQuery,
+                        onRetryIndexing = viewModel::retryDocumentIndexing,
+                        onRetryQuery = viewModel::retryLastQuery,
                         onClearDocument = viewModel::clearDocument
                     )
+                } else {
+                    ChatRecoveryScreen(onBack = viewModel::clearDocument)
                 }
             }
+        }
+        }
+    }
+}
+
+@Composable
+private fun ChatRecoveryScreen(onBack: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Something went wrong",
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "The document session was lost. Go back and open the document again.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 12.dp, bottom = 24.dp)
+        )
+        Button(onClick = onBack) {
+            Text(text = "Back to Home")
         }
     }
 }

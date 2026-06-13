@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.documind.app.ui.theme.DocumindDimens
 import com.documind.app.ui.theme.CardPdf
 import com.documind.app.ui.theme.CardText
 import com.documind.app.ui.theme.CardUrl
@@ -42,6 +43,7 @@ fun SourceCard(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
     accentColor: Color = MaterialTheme.colorScheme.primary
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -57,9 +59,9 @@ fun SourceCard(
             onClick()
         },
         modifier = modifier
-            .size(150.dp)
+            .size(width = 150.dp, height = 168.dp)
             .scale(scale),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(DocumindDimens.CardRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -91,7 +93,7 @@ fun SourceCard(
                     tint = accentColor
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -100,6 +102,16 @@ fun SourceCard(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface
             )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
         }
     }
 }

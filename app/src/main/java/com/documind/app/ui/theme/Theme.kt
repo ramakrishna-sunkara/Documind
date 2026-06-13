@@ -1,7 +1,6 @@
 package com.documind.app.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -15,54 +14,81 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = Primary80,
+    onPrimary = Color(0xFF0F172A),
+    primaryContainer = Color(0xFF1E3A5F),
+    onPrimaryContainer = Primary80,
     secondary = Secondary80,
+    onSecondary = Color(0xFF0F172A),
+    secondaryContainer = Color(0xFF2E1065),
+    onSecondaryContainer = Secondary80,
     tertiary = Tertiary80,
-    surface = SurfaceDark,
+    onTertiary = Color(0xFF0F172A),
+    tertiaryContainer = Color(0xFF064E3B),
+    onTertiaryContainer = Tertiary80,
     background = SurfaceDark,
+    onBackground = Color(0xFFF1F5F9),
+    surface = SurfaceDark,
+    onSurface = Color(0xFFF1F5F9),
     surfaceContainer = SurfaceContainerDark,
-    surfaceVariant = SurfaceContainerDark,
-    onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onSurface = Color.White,
+    surfaceContainerHigh = Color(0xFF334155),
+    surfaceVariant = Color(0xFF1E293B),
     onSurfaceVariant = Color(0xFFCBD5E1),
-    error = ErrorRed
+    outline = Color(0xFF475569),
+    outlineVariant = Color(0xFF334155),
+    error = ErrorRed,
+    onError = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary40,
-    secondary = Secondary40,
-    tertiary = Tertiary40,
-    surface = SurfaceLight,
-    background = SurfaceLight,
-    surfaceContainer = SurfaceContainerLight,
-    surfaceVariant = Color(0xFFF1F5F9),
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFDBEAFE),
+    onPrimaryContainer = Color(0xFF1E40AF),
+    secondary = Secondary40,
     onSecondary = Color.White,
-    onSurface = Color(0xFF1E293B),
-    onSurfaceVariant = Color(0xFF64748B),
-    error = ErrorRed
+    secondaryContainer = Color(0xFFEDE9FE),
+    onSecondaryContainer = Color(0xFF5B21B6),
+    tertiary = Tertiary40,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFD1FAE5),
+    onTertiaryContainer = Color(0xFF065F46),
+    background = SurfaceLight,
+    onBackground = TextPrimaryLight,
+    surface = SurfaceLight,
+    onSurface = TextPrimaryLight,
+    surfaceContainer = SurfaceContainerLight,
+    surfaceContainerHigh = SurfaceElevatedLight,
+    surfaceVariant = SurfaceMutedLight,
+    onSurfaceVariant = TextSecondaryLight,
+    outline = Color(0xFFCBD5E1),
+    outlineVariant = Color(0xFFE2E8F0),
+    error = ErrorRed,
+    onError = Color.White
 )
 
 @Composable
 fun DocumindTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.surface.toArgb()
+            val statusBarColor = if (darkTheme) {
+                BackgroundGradientTopDark
+            } else {
+                BackgroundGradientTop
+            }
+            window.statusBarColor = statusBarColor.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
-
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = DocumindShapes,
         content = content
     )
 }

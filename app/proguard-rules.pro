@@ -29,6 +29,14 @@
 }
 
 # ===================================================================
+# Google AI Edge RAG SDK
+# ===================================================================
+
+-keep class com.google.ai.edge.localagents.** { *; }
+-keep interface com.google.ai.edge.localagents.** { *; }
+-dontwarn com.google.ai.edge.localagents.**
+
+# ===================================================================
 # MediaPipe LLM Inference
 # ===================================================================
 
@@ -78,6 +86,21 @@
 # Keep AnalyticsManager
 -keep class com.documind.app.data.analytics.AnalyticsManager { *; }
 -keep class com.documind.app.data.analytics.AnalyticsManager$* { *; }
+-keep class com.documind.app.data.analytics.CrashAnalytics { *; }
+
+# ===================================================================
+# org.json (Android platform + Firebase Installations)
+# localagents-rag pulls org.json:json — excluded in Gradle; keep platform classes intact.
+# Without these rules R8 repackages JSONObject and Firebase crashes with VerifyError.
+# ===================================================================
+
+-keep class org.json.** { *; }
+-keepnames class org.json.** { *; }
+-keepclassmembers class org.json.** { *; }
+-dontwarn org.json.**
+
+-keep class com.google.firebase.installations.** { *; }
+-keep class com.google.firebase.installations.local.** { *; }
 
 # ===================================================================
 # Apache PDFBox Android

@@ -1,37 +1,33 @@
 package com.documind.app.domain.usecase
 
-import com.documind.app.data.llm.LocalLLMManager
-import com.documind.app.data.processor.TextProcessor
+import com.documind.app.data.llm.RagPipelineManager
 import com.documind.app.domain.model.DocumentContent
+import com.documind.app.util.UserFacingErrors
 
 class ProcessQueryUseCase(
-    private val llmManager: LocalLLMManager,
-    private val textProcessor: TextProcessor = TextProcessor()
+    private val ragPipelineManager: RagPipelineManager
 ) {
-    
+
     suspend fun process(
         document: DocumentContent,
         query: String
     ): Result<String> {
-        if (!llmManager.isReady()) {
-            return Result.failure(IllegalStateException("AI model is not ready"))
+        if (!ragPipelineManager.isReady()) {
+            return Result.failure(IllegalStateException(UserFacingErrors.ragNotReady()))
         }
-        
+        if (!ragPipelineManager.hasIndexedDocument()) {
+            return Result.failure(IllegalStateException(UserFacingErrors.documentNotIndexed()))
+        }
         if (query.isBlank()) {
-            return Result.failure(IllegalArgumentException("Query cannot be empty"))
+            return Result.failure(IllegalArgumentException("Please enter a question."))
         }
-        
-        // Use the max context from LocalLLMManager to stay within token limits
-        val context = textProcessor.buildContextForQuery(
-            chunks = document.chunks,
-            maxContextLength = LocalLLMManager.MAX_CONTEXT_CHARS
-        )
-        
-        return llmManager.generateResponse(
-            documentContext = context,
-            userQuery = query.trim()
+        return ragPipelineManager.generateResponse(query.trim()).fold(
+            onSuccess = { response -> Result.success(response) },
+            onFailure = { error ->
+                Result.failure(Exception(UserFacingErrors.queryFailed(error)))
+            }
         )
     }
-    
-    fun isReady(): Boolean = llmManager.isReady()
+
+    fun isReady(): Boolean = ragPipelineManager.isReady()
 }

@@ -107,6 +107,8 @@ fabric.properties
 *.task
 model_pack/src/main/assets/*.task
 model_pack/src/main/assets/gemma*.task
+model_pack/src/main/assets/*.tflite
+model_pack/src/main/assets/sentencepiece.model
 
 # Secrets and credentials
 *.pem

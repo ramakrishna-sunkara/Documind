@@ -6,6 +6,8 @@ import com.documind.app.data.extractor.SourceType
 import com.documind.app.data.extractor.UrlExtractor
 import com.documind.app.data.processor.TextProcessor
 import com.documind.app.domain.model.DocumentContent
+import com.documind.app.util.ErrorCategory
+import com.documind.app.util.UserFacingErrors
 import java.io.InputStream
 
 class ExtractContentUseCase(
@@ -57,18 +59,42 @@ class ExtractContentUseCase(
         sourceType: SourceType,
         sourceName: String
     ): Result<DocumentContent> {
-        return this.map { rawText ->
+        return this.mapCatching { rawText ->
             val cleanedText = textProcessor.cleanText(rawText)
+            if (cleanedText.isBlank()) {
+                throw IllegalStateException(
+                    UserFacingErrors.forMessage(
+                        "No readable text was found in this document.",
+                        ErrorCategory.EXTRACTION
+                    )
+                )
+            }
             val wordCount = textProcessor.countWords(cleanedText)
+            if (wordCount == 0) {
+                throw IllegalStateException(
+                    UserFacingErrors.forMessage(
+                        "No readable text was found in this document.",
+                        ErrorCategory.EXTRACTION
+                    )
+                )
+            }
             val chunks = textProcessor.chunkText(cleanedText)
+            val indexableChunks = textProcessor.prepareChunksForIndexing(chunks)
+            if (indexableChunks.isEmpty()) {
+                throw IllegalStateException(
+                    UserFacingErrors.forMessage(
+                        "No indexable text was found after cleanup.",
+                        ErrorCategory.INDEXING
+                    )
+                )
+            }
             val isLarge = textProcessor.isLargeDocument(cleanedText)
-            
             DocumentContent(
                 text = cleanedText,
                 wordCount = wordCount,
                 sourceType = sourceType,
                 sourceName = sourceName,
-                chunks = chunks,
+                chunks = indexableChunks,
                 isLargeDocument = isLarge
             )
         }

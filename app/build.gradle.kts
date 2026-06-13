@@ -13,14 +13,14 @@ android {
         applicationId = "com.documind.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 21
-        versionName = "1.0.21"
+        versionCode = 30
+        versionName = "1.0.30"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
         
         // Build config fields
-        buildConfigField("String", "VERSION_DISPLAY", "\"1.0.0\"")
+        buildConfigField("String", "VERSION_DISPLAY", "\"1.0.29\"")
         buildConfigField("Boolean", "ENABLE_ANALYTICS", "true")
     }
     
@@ -131,6 +131,11 @@ android {
     }
     
     assetPacks += ":model_pack"
+
+    firebaseCrashlytics {
+        mappingFileUploadEnabled = true
+        nativeSymbolUploadEnabled = true
+    }
 }
 
 dependencies {
@@ -152,6 +157,9 @@ dependencies {
     
     // AI & Model Delivery
     implementation(libs.mediapipe.tasks.genai)
+    implementation(libs.localagents.rag) {
+        exclude(group = "org.json", module = "json")
+    }
     implementation(libs.play.asset.delivery)
     
     // In-App Update
@@ -167,6 +175,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.crashlytics.ndk)
     
     // Testing
     testImplementation(libs.junit)

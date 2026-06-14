@@ -20,6 +20,7 @@ jsoup = "1.17.2"
 lifecycleViewmodelCompose = "2.10.0"
 navigationCompose = "2.9.2"
 materialIconsExtended = "1.7.8"
+lottie = "6.7.1"
 # Firebase
 firebaseBom = "33.7.0"
 googleServices = "4.4.2"
@@ -52,6 +53,7 @@ jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
 # Firebase
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }

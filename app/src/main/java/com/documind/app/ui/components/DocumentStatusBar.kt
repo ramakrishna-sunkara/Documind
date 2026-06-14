@@ -63,7 +63,10 @@ fun DocumentStatusBar(
     }
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f)
+        shape = RoundedCornerShape(DocumindDimens.ChipRadius),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shadowElevation = 1.dp,
+        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier

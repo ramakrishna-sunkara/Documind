@@ -13,8 +13,8 @@ android {
         applicationId = "com.documind.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 30
-        versionName = "1.0.30"
+        versionCode = 31
+        versionName = "1.0.31"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.lottie.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     

@@ -19,9 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -35,46 +32,50 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.documind.app.domain.model.ExtractionState
+import com.documind.app.ui.components.DocumindLottieAnimation
+import com.documind.app.ui.components.DocumindLottieAsset
+import com.documind.app.ui.components.ErrorDialog
 import com.documind.app.ui.theme.DocumindDimens
-import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.DocumindScreenBackground
 import com.documind.app.ui.theme.ErrorRed
 import com.documind.app.ui.theme.OnDeviceBadge
 import com.documind.app.ui.theme.Primary40
 import com.documind.app.ui.theme.Secondary40
-import com.documind.app.domain.model.ExtractionState
-import com.documind.app.ui.components.ErrorDialog
 import kotlinx.coroutines.launch
 
 private data class OnboardingPage(
-    val icon: ImageVector,
+    val lottieAsset: DocumindLottieAsset,
     val title: String,
     val description: String,
-    val accentColor: Color
+    val accentColor: Color,
+    val tag: String
 )
 
 private val onboardingPages: List<OnboardingPage> = listOf(
     OnboardingPage(
-        icon = Icons.Default.Security,
+        lottieAsset = DocumindLottieAsset.Document,
         title = "Your Documents Stay Private",
         description = "Cloud AI tools upload your contracts, research, and financial files to remote servers. DocuMind keeps everything on your phone.",
-        accentColor = ErrorRed
+        accentColor = ErrorRed,
+        tag = "Privacy First"
     ),
     OnboardingPage(
-        icon = Icons.Default.Psychology,
+        lottieAsset = DocumindLottieAsset.AIAnimation,
         title = "AI Runs On Your Device",
         description = "Powered by Google's Gemma 1B model via MediaPipe. Chat, summarize, and extract insights — with zero cloud upload.",
-        accentColor = Secondary40
+        accentColor = Secondary40,
+        tag = "On-Device AI"
     ),
     OnboardingPage(
-        icon = Icons.Default.Description,
+        lottieAsset = DocumindLottieAsset.Offline,
         title = "Import. Ask. Understand.",
         description = "Open a PDF, Word file, web article, or pasted text. Ask questions and get answers offline, anytime.",
-        accentColor = OnDeviceBadge
+        accentColor = OnDeviceBadge,
+        tag = "Works Offline"
     )
 )
 
@@ -146,21 +147,6 @@ fun OnboardingScreen(
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
-            if (isLastPage) {
-                Spacer(modifier = Modifier.height(8.dp))
-                TextButton(
-                    onClick = onTryDemo,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Try Demo Document",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -186,20 +172,11 @@ private fun OnboardingPageContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(brush = DocumindGradients.brand()),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = page.icon,
-                contentDescription = null,
-                modifier = Modifier.size(56.dp),
-                tint = Color.White
-            )
-        }
+        DocumindLottieAnimation(
+            asset = page.lottieAsset,
+            size = 140.dp
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
         Surface(
             shape = RoundedCornerShape(DocumindDimens.ChipRadius),
@@ -217,11 +194,7 @@ private fun OnboardingPageContent(
                     tint = page.accentColor
                 )
                 Text(
-                    text = when (page.icon) {
-                        Icons.Default.Security -> "Privacy First"
-                        Icons.Default.Psychology -> "On-Device AI"
-                        else -> "Works Offline"
-                    },
+                    text = page.tag,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),

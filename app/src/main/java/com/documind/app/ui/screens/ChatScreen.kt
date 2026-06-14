@@ -1,5 +1,6 @@
 package com.documind.app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,6 +61,7 @@ import com.documind.app.ui.components.ChatQuickActions
 import com.documind.app.ui.components.ChatQuickActionsRow
 import com.documind.app.ui.components.ChatSuggestionChip
 import com.documind.app.ui.components.DocumentStatusBar
+import com.documind.app.ui.components.IndexingOverlay
 import com.documind.app.ui.components.MessageBubble
 import com.documind.app.ui.theme.DocumindDimens
 import com.documind.app.ui.theme.DocumindGradients
@@ -109,12 +112,15 @@ fun ChatScreen(
             listState.animateScrollToItem(messages.size - 1)
         }
     }
+    BackHandler(onBack = onClearDocument)
     DocumindScreenBackground(modifier = modifier) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
+                    windowInsets = WindowInsets(0, 0, 0, 0),
                     navigationIcon = {
                         IconButton(onClick = onClearDocument) {
                             Icon(
@@ -165,7 +171,10 @@ fun ChatScreen(
                     .padding(paddingValues)
                     .imePadding()
             ) {
-                DocumentStatusBar(document = document)
+                DocumentStatusBar(
+                    document = document,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
                 indexingErrorMessage?.let { errorMessage ->
                     Surface(
                         modifier = Modifier
@@ -222,31 +231,10 @@ fun ChatScreen(
                         }
                     }
                     if (isDocumentIndexing) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "Preparing on-device AI...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "This usually takes a few seconds.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
+                        IndexingOverlay(
+                            title = "Preparing on-device AI",
+                            subtitle = "Indexing your document for private, offline Q&A. This usually takes a few seconds."
+                        )
                     }
                 }
                 queryErrorMessage?.let {
@@ -394,15 +382,19 @@ private fun EmptyStateContent(
     ) {
         Surface(
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-            modifier = Modifier.size(88.dp)
+            modifier = Modifier
+                .size(88.dp)
+                .clip(CircleShape)
+                .background(brush = DocumindGradients.brand()),
+            color = Color.Transparent,
+            shadowElevation = 4.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Default.QuestionAnswer,
                     contentDescription = null,
-                    modifier = Modifier.size(44.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    modifier = Modifier.size(40.dp),
+                    tint = Color.White
                 )
             }
         }

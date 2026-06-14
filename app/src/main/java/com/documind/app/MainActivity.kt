@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -169,8 +170,7 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
                     onSkipModel = viewModel::skipModelLoading,
                     onRequestCellularDownload = {
                         activity?.let { viewModel.requestCellularDownload(it) }
-                    },
-                    modifier = Modifier.padding(innerPadding)
+                    }
                 )
             }
             is UiScreen.Onboarding -> {
@@ -195,8 +195,7 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
                     onRequestCellularDownload = {
                         activity?.let { viewModel.requestCellularDownload(it) }
                     },
-                    onLoadDemoDocument = viewModel::loadDemoDocument,
-                    modifier = Modifier.padding(innerPadding)
+                    onLoadDemoDocument = viewModel::loadDemoDocument
                 )
             }
             is UiScreen.Chat -> {
@@ -223,6 +222,7 @@ fun DocuMindMainContent(inAppUpdateManager: InAppUpdateManager?) {
 
 @Composable
 private fun ChatRecoveryScreen(onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
     Column(
         modifier = Modifier
             .fillMaxSize()

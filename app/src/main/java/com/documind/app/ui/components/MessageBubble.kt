@@ -1,11 +1,8 @@
 package com.documind.app.ui.components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -28,10 +24,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.documind.app.domain.model.ChatMessage
 import com.documind.app.ui.theme.DocumindDimens
 import com.documind.app.ui.theme.DocumindGradients
-import com.documind.app.ui.theme.GradientMiddle
 import com.documind.app.ui.theme.ErrorRed
 import com.documind.app.ui.theme.OnDeviceBadge
 
@@ -57,8 +50,13 @@ fun MessageBubble(
     } else {
         RoundedCornerShape(bubbleRadius, bubbleRadius, bubbleRadius, 4.dp)
     }
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { offset -> offset / 3 }),
+        modifier = modifier
+    ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
         if (!isUser) {
@@ -111,7 +109,10 @@ fun MessageBubble(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(10.dp))
-                            LoadingDots()
+                            DocumindLottieAnimation(
+                                asset = DocumindLottieAsset.Loading,
+                                size = 72.dp
+                            )
                         } else {
                             if (isErrorMessage || isInfoMessage) {
                                 Row(
@@ -161,6 +162,7 @@ fun MessageBubble(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -180,33 +182,5 @@ private fun OnDeviceFooter() {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
         )
-    }
-}
-
-@Composable
-private fun LoadingDots(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "loading")
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(3) { index ->
-            val alpha by infiniteTransition.animateFloat(
-                initialValue = 0.3f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(500, easing = LinearEasing, delayMillis = index * 150),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "dot$index"
-            )
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .alpha(alpha)
-                    .background(color = GradientMiddle, shape = CircleShape)
-            )
-        }
     }
 }

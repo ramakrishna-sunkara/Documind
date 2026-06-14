@@ -109,6 +109,8 @@ model_pack/src/main/assets/*.task
 model_pack/src/main/assets/gemma*.task
 model_pack/src/main/assets/*.tflite
 model_pack/src/main/assets/sentencepiece.model
+app/src/main/assets/**/*.tflite
+app/src/main/assets/embedder/
 
 # Secrets and credentials
 *.pem

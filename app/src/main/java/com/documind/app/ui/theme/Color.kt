@@ -1,5 +1,7 @@
 package com.documind.app.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // Brand palette
@@ -15,9 +17,9 @@ val Tertiary40 = Color(0xFF059669)
 
 // Surfaces
 val SurfaceLight = Color(0xFFF8FAFC)
-val SurfaceDark = Color(0xFF0F172A)
+val SurfaceDark = Color(0xFF0B1120)
 val SurfaceContainerLight = Color(0xFFFFFFFF)
-val SurfaceContainerDark = Color(0xFF1E293B)
+val SurfaceContainerDark = Color(0xFF1A2332)
 val SurfaceElevatedLight = Color(0xFFFFFFFF)
 val SurfaceMutedLight = Color(0xFFF1F5F9)
 
@@ -27,18 +29,28 @@ val GradientMiddle = Color(0xFF7C3AED)
 val GradientEnd = Color(0xFF059669)
 
 // Screen background gradient (subtle, full-screen)
-val BackgroundGradientTop = Color(0xFFF0F7FF)
+val BackgroundGradientTop = Color(0xFFEEF4FF)
 val BackgroundGradientBottom = Color(0xFFF8FAFC)
-val BackgroundGradientTopDark = Color(0xFF0F172A)
-val BackgroundGradientBottomDark = Color(0xFF1E293B)
+val BackgroundGradientTopDark = Color(0xFF0B1120)
+val BackgroundGradientBottomDark = Color(0xFF151D2E)
 
-// Semantic — privacy & trust
+// Decorative orbs
+val OrbBlue = Color(0xFF3B82F6)
+val OrbPurple = Color(0xFF8B5CF6)
+val OrbGreen = Color(0xFF10B981)
+
+// Semantic — privacy & trust (light)
 val PrivacyGreen = Color(0xFF059669)
 val OnDeviceBadge = Color(0xFF0D9488)
 val AiReadyGreen = Color(0xFF10B981)
 val TrustBadgeBackground = Color(0xFFECFDF5)
 val TrustBadgeBorder = Color(0xFFA7F3D0)
 val PrivacyNoteBackground = Color(0xFFF0FDF4)
+
+// Semantic — privacy & trust (dark)
+val TrustBadgeBackgroundDark = Color(0xFF0D2818)
+val TrustBadgeBorderDark = Color(0xFF14532D)
+val PrivacyNoteBackgroundDark = Color(0xFF0D2818)
 
 // Status
 val SuccessGreen = Color(0xFF10B981)
@@ -60,3 +72,18 @@ val CardDemo = Color(0xFF2563EB)
 val TextPrimaryLight = Color(0xFF0F172A)
 val TextSecondaryLight = Color(0xFF64748B)
 val TextTertiaryLight = Color(0xFF94A3B8)
+
+@Composable
+fun trustBadgeBackground(): Color {
+    return if (isSystemInDarkTheme()) TrustBadgeBackgroundDark else TrustBadgeBackground
+}
+
+@Composable
+fun trustBadgeBorder(): Color {
+    return if (isSystemInDarkTheme()) TrustBadgeBorderDark else TrustBadgeBorder
+}
+
+@Composable
+fun privacyNoteBackground(): Color {
+    return if (isSystemInDarkTheme()) PrivacyNoteBackgroundDark else PrivacyNoteBackground
+}

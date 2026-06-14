@@ -7,13 +7,29 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -26,13 +42,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.documind.app.ui.components.GradientPrimaryButton
+import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.data.llm.ModelState
 import com.documind.app.data.analytics.CrashAnalytics
 import com.documind.app.data.update.InAppUpdateManager
@@ -47,6 +58,7 @@ import com.documind.app.ui.screens.OnboardingScreen
 import com.documind.app.ui.theme.DocumindScreenBackground
 import com.documind.app.ui.theme.DocumindTheme
 import com.documind.app.ui.viewmodel.DocuMindViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     
@@ -230,20 +242,39 @@ private fun ChatRecoveryScreen(onBack: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(brush = DocumindGradients.brand()),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = Color.White
+            )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Something went wrong",
-            style = MaterialTheme.typography.titleLarge,
+            text = "Session Lost",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.Bold
+            ),
             textAlign = TextAlign.Center
         )
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "The document session was lost. Go back and open the document again.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 12.dp, bottom = 24.dp)
+            textAlign = TextAlign.Center
         )
-        Button(onClick = onBack) {
-            Text(text = "Back to Home")
-        }
+        Spacer(modifier = Modifier.height(32.dp))
+        GradientPrimaryButton(
+            text = "Back to Home",
+            onClick = onBack
+        )
     }
 }

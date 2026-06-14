@@ -55,113 +55,113 @@ fun MessageBubble(
         enter = fadeIn() + slideInVertically(initialOffsetY = { offset -> offset / 3 }),
         modifier = modifier
     ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
-    ) {
-        if (!isUser) {
-            Text(
-                text = "DocuMind",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)
-            )
-        }
-        Box(modifier = Modifier.widthIn(max = 320.dp)) {
-            if (isUser) {
-                Surface(
-                    shape = shape,
-                    modifier = Modifier
-                        .clip(shape)
-                        .background(brush = DocumindGradients.userMessage())
-                ) {
-                    Box(
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
+        ) {
+            if (!isUser) {
+                Text(
+                    text = "DocuMind",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)
+                )
+            }
+            Box(modifier = Modifier.widthIn(max = 320.dp)) {
+                if (isUser) {
+                    Surface(
+                        shape = shape,
                         modifier = Modifier
+                            .clip(shape)
                             .background(brush = DocumindGradients.userMessage())
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
-                        Text(
-                            text = message.content,
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            } else {
-                Surface(
-                    shape = shape,
-                    color = when {
-                        isErrorMessage -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.92f)
-                        isInfoMessage -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-                        else -> MaterialTheme.colorScheme.surfaceContainer
-                    },
-                    shadowElevation = if (isErrorMessage || isInfoMessage) 0.dp else 2.dp
-                ) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                        if (message.isLoading) {
-                            Text(
-                                text = "Thinking on your device...",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            DocumindLottieAnimation(
-                                asset = DocumindLottieAsset.Loading,
-                                size = 72.dp
-                            )
-                        } else {
-                            if (isErrorMessage || isInfoMessage) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isErrorMessage) {
-                                            Icons.Default.ErrorOutline
-                                        } else {
-                                            Icons.Default.Info
-                                        },
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = if (isErrorMessage) ErrorRed else MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = if (isErrorMessage) "Something went wrong" else "Please wait",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        color = if (isErrorMessage) {
-                                            MaterialTheme.colorScheme.onErrorContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        }
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
+                        Box(
+                            modifier = Modifier
+                                .background(brush = DocumindGradients.userMessage())
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
                             Text(
                                 text = message.content,
-                                color = when {
-                                    isErrorMessage -> MaterialTheme.colorScheme.onErrorContainer
-                                    isInfoMessage -> MaterialTheme.colorScheme.onPrimaryContainer
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                },
+                                color = Color.White,
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            if (!isErrorMessage && !isInfoMessage) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                OnDeviceFooter()
+                        }
+                    }
+                } else {
+                    Surface(
+                        shape = shape,
+                        color = when {
+                            isErrorMessage -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.92f)
+                            isInfoMessage -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                            else -> MaterialTheme.colorScheme.surfaceContainer
+                        },
+                        shadowElevation = if (isErrorMessage || isInfoMessage) 0.dp else 2.dp
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            if (message.isLoading) {
+                                Text(
+                                    text = "Thinking on your device...",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                                DocumindLottieAnimation(
+                                    asset = DocumindLottieAsset.Loading,
+                                    size = 72.dp
+                                )
+                            } else {
+                                if (isErrorMessage || isInfoMessage) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isErrorMessage) {
+                                                Icons.Default.ErrorOutline
+                                            } else {
+                                                Icons.Default.Info
+                                            },
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isErrorMessage) ErrorRed else MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = if (isErrorMessage) "Something went wrong" else "Please wait",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.SemiBold
+                                            ),
+                                            color = if (isErrorMessage) {
+                                                MaterialTheme.colorScheme.onErrorContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            }
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                Text(
+                                    text = message.content,
+                                    color = when {
+                                        isErrorMessage -> MaterialTheme.colorScheme.onErrorContainer
+                                        isInfoMessage -> MaterialTheme.colorScheme.onPrimaryContainer
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                if (!isErrorMessage && !isInfoMessage) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OnDeviceFooter()
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
     }
 }
 

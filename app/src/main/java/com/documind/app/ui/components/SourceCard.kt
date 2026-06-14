@@ -2,9 +2,11 @@ package com.documind.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +56,12 @@ fun SourceCard(
         animationSpec = tween(120),
         label = "sourceCardScale"
     )
+    val isDark: Boolean = isSystemInDarkTheme()
+    val borderColor: Color = if (isDark) {
+        accentColor.copy(alpha = 0.25f)
+    } else {
+        accentColor.copy(alpha = 0.15f)
+    }
     Card(
         onClick = onClick,
         interactionSource = interactionSource,
@@ -62,11 +70,14 @@ fun SourceCard(
             .scale(scale),
         shape = RoundedCornerShape(DocumindDimens.CardRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
+            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
+                alpha = if (isDark) 0.85f else 0.95f
+            )
         ),
+        border = BorderStroke(1.dp, borderColor),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 6.dp
+            defaultElevation = 1.dp,
+            pressedElevation = 4.dp
         )
     ) {
         Column(

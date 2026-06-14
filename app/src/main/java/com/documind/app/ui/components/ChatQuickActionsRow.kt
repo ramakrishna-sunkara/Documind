@@ -14,7 +14,8 @@ object ChatQuickActions {
     val suggestions: List<String> = listOf(
         "Summarize this document",
         "What are the key points?",
-        "What is the main topic?"
+        "What is the main topic?",
+        "Extract action items"
     )
 }
 

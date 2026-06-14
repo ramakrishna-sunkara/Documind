@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.documind.app.ui.theme.DocumindDimens
 import com.documind.app.ui.theme.OnDeviceBadge
 import com.documind.app.ui.theme.PrivacyGreen
-import com.documind.app.ui.theme.TrustBadgeBackground
-import com.documind.app.ui.theme.TrustBadgeBorder
+import com.documind.app.ui.theme.trustBadgeBackground
+import com.documind.app.ui.theme.trustBadgeBorder
 
 @Composable
 fun TrustBadgesRow(
@@ -65,8 +65,8 @@ private fun TrustBadge(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(DocumindDimens.ChipRadius),
-        color = TrustBadgeBackground,
-        border = BorderStroke(1.dp, TrustBadgeBorder)
+        color = trustBadgeBackground(),
+        border = BorderStroke(1.dp, trustBadgeBorder())
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

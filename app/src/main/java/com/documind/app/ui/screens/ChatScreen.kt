@@ -27,7 +27,6 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,9 +56,7 @@ import com.documind.app.domain.model.ChatMessage
 import com.documind.app.domain.model.DocumentContent
 import com.documind.app.domain.model.ExtractionState
 import com.documind.app.domain.model.QueryState
-import com.documind.app.ui.components.ChatQuickActions
 import com.documind.app.ui.components.ChatQuickActionsRow
-import com.documind.app.ui.components.ChatSuggestionChip
 import com.documind.app.ui.components.DocumentStatusBar
 import com.documind.app.ui.components.IndexingOverlay
 import com.documind.app.ui.components.MessageBubble
@@ -119,50 +116,55 @@ fun ChatScreen(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
-                TopAppBar(
-                    windowInsets = WindowInsets(0, 0, 0, 0),
-                    navigationIcon = {
-                        IconButton(onClick = onClearDocument) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    },
-                    title = {
-                        Column {
-                            Text(
-                                text = document.sourceName,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                    shadowElevation = 1.dp
+                ) {
+                    TopAppBar(
+                        windowInsets = WindowInsets(0, 0, 0, 0),
+                        navigationIcon = {
+                            IconButton(onClick = onClearDocument) {
                                 Icon(
-                                    imageVector = Icons.Default.Psychology,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = OnDeviceBadge
-                                )
-                                Text(
-                                    text = "Offline · On-Device",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = OnDeviceBadge
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
+                        },
+                        title = {
+                            Column {
+                                Text(
+                                    text = document.sourceName,
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Psychology,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp),
+                                        tint = OnDeviceBadge
+                                    )
+                                    Text(
+                                        text = "On-Device · Private",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = OnDeviceBadge
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent
+                        )
                     )
-                )
+                }
             }
         ) { paddingValues ->
             Column(
@@ -376,68 +378,39 @@ private fun EmptyStateContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Surface(
-            shape = CircleShape,
+        Box(
             modifier = Modifier
-                .size(88.dp)
+                .size(80.dp)
                 .clip(CircleShape)
                 .background(brush = DocumindGradients.brand()),
-            color = Color.Transparent,
-            shadowElevation = 4.dp
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.QuestionAnswer,
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = Color.White
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.QuestionAnswer,
+                contentDescription = null,
+                modifier = Modifier.size(38.dp),
+                tint = Color.White
+            )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.Bold
             ),
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(28.dp))
-        Text(
-            text = "Try asking:",
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            ChatQuickActions.suggestions.forEach { suggestion ->
-                ChatSuggestionChip(
-                    text = suggestion,
-                    onClick = {
-                        if (enabled) {
-                            onSuggestionClick(suggestion)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
     }
 }

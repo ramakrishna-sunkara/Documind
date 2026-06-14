@@ -1,5 +1,7 @@
 package com.documind.app.ui.screens
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,63 +21,70 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.documind.app.domain.model.ExtractionState
 import com.documind.app.ui.components.DocumindLottieAnimation
 import com.documind.app.ui.components.DocumindLottieAsset
 import com.documind.app.ui.components.ErrorDialog
+import com.documind.app.ui.components.GradientPrimaryButton
 import com.documind.app.ui.theme.DocumindDimens
+import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.DocumindScreenBackground
 import com.documind.app.ui.theme.ErrorRed
 import com.documind.app.ui.theme.OnDeviceBadge
-import com.documind.app.ui.theme.Primary40
 import com.documind.app.ui.theme.Secondary40
 import kotlinx.coroutines.launch
 
 private data class OnboardingPage(
     val lottieAsset: DocumindLottieAsset,
+    val tagIcon: ImageVector,
+    val tag: String,
+    val tagColor: Color,
     val title: String,
-    val description: String,
-    val accentColor: Color,
-    val tag: String
+    val description: String
 )
 
-private val onboardingPages: List<OnboardingPage> = listOf(
+private val onboardingPages = listOf(
     OnboardingPage(
         lottieAsset = DocumindLottieAsset.Document,
-        title = "Your Documents Stay Private",
-        description = "Cloud AI tools upload your contracts, research, and financial files to remote servers. DocuMind keeps everything on your phone.",
-        accentColor = ErrorRed,
-        tag = "Privacy First"
+        tagIcon = Icons.Default.CloudOff,
+        tag = "Privacy First",
+        tagColor = ErrorRed,
+        title = "Your documents\nnever leave\nyour phone.",
+        description = "Cloud AI tools upload your files to remote servers. DocuMind processes everything locally — ideal for legal, financial, and personal documents."
     ),
     OnboardingPage(
         lottieAsset = DocumindLottieAsset.AIAnimation,
-        title = "AI Runs On Your Device",
-        description = "Powered by Google's Gemma 1B model via MediaPipe. Chat, summarize, and extract insights — with zero cloud upload.",
-        accentColor = Secondary40,
-        tag = "On-Device AI"
+        tagIcon = Icons.Default.Memory,
+        tag = "On-Device AI",
+        tagColor = Secondary40,
+        title = "Powered by\nGemma 1B.\nNo internet.",
+        description = "Google's Gemma model runs directly on your device via MediaPipe. Chat, summarize, and extract insights with zero cloud dependency."
     ),
     OnboardingPage(
         lottieAsset = DocumindLottieAsset.Offline,
-        title = "Import. Ask. Understand.",
-        description = "Open a PDF, Word file, web article, or pasted text. Ask questions and get answers offline, anytime.",
-        accentColor = OnDeviceBadge,
-        tag = "Works Offline"
+        tagIcon = Icons.Default.WifiOff,
+        tag = "Works Offline",
+        tagColor = OnDeviceBadge,
+        title = "Import.\nAsk.\nUnderstand.",
+        description = "PDF, Word, web articles, or pasted text — ask any question and get answers privately, even with no internet connection."
     )
 )
 
@@ -90,13 +99,16 @@ fun OnboardingScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
     val coroutineScope = rememberCoroutineScope()
-    val isLastPage: Boolean = pagerState.currentPage == onboardingPages.lastIndex
-    DocumindScreenBackground(modifier = modifier) {
+    val isLastPage = pagerState.currentPage == onboardingPages.lastIndex
+
+    DocumindScreenBackground(modifier = modifier, showOrbs = false) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(horizontal = 28.dp)
+                .padding(top = 16.dp, bottom = 32.dp)
         ) {
+            // Skip button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
@@ -109,21 +121,30 @@ fun OnboardingScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                } else {
+                    Spacer(modifier = Modifier.height(40.dp))
                 }
             }
+
+            // Pager
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
             ) { pageIndex ->
                 OnboardingPageContent(page = onboardingPages[pageIndex])
             }
-            Spacer(modifier = Modifier.height(24.dp))
+
+            // Page dots
             PageIndicator(
                 pageCount = onboardingPages.size,
                 currentPage = pagerState.currentPage
             )
+
             Spacer(modifier = Modifier.height(24.dp))
-            Button(
+
+            // CTA
+            GradientPrimaryButton(
+                text = if (isLastPage) "Get Started" else "Continue",
                 onClick = {
                     if (isLastPage) {
                         onComplete()
@@ -132,24 +153,11 @@ fun OnboardingScreen(
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(DocumindDimens.ButtonRadius),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary40
-                )
-            ) {
-                Text(
-                    text = if (isLastPage) "Get Started" else "Next",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+                }
+            )
         }
     }
+
     if (extractionState is ExtractionState.Error) {
         ErrorDialog(
             title = "Demo Could Not Load",
@@ -162,90 +170,102 @@ fun OnboardingScreen(
 }
 
 @Composable
-private fun OnboardingPageContent(
-    page: OnboardingPage
-) {
+private fun OnboardingPageContent(page: OnboardingPage) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(bottom = 16.dp),
+        verticalArrangement = Arrangement.Bottom
     ) {
-        DocumindLottieAnimation(
-            asset = page.lottieAsset,
-            size = 140.dp
-        )
+        // Illustration — top half, unconstrained
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            DocumindLottieAnimation(
+                asset = page.lottieAsset,
+                size = 200.dp
+            )
+        }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        // Tag pill
         Surface(
             shape = RoundedCornerShape(DocumindDimens.ChipRadius),
-            color = page.accentColor.copy(alpha = 0.1f)
+            color = page.tagColor.copy(alpha = 0.1f)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.CloudOff,
+                    imageVector = page.tagIcon,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = page.accentColor
+                    modifier = Modifier.size(12.dp),
+                    tint = page.tagColor
                 )
                 Text(
                     text = page.tag,
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.3.sp
                     ),
-                    color = page.accentColor
+                    color = page.tagColor
                 )
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Big, bold left-aligned title
         Text(
             text = page.title,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                lineHeight = 36.sp,
+                letterSpacing = (-0.5).sp
             ),
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
+            color = MaterialTheme.colorScheme.onSurface
         )
+
         Spacer(modifier = Modifier.height(12.dp))
+
+        // Left-aligned description
         Text(
             text = page.description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+            style = MaterialTheme.typography.bodyMedium.copy(
+                lineHeight = 22.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
 @Composable
-private fun PageIndicator(
-    pageCount: Int,
-    currentPage: Int
-) {
+private fun PageIndicator(pageCount: Int, currentPage: Int) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(pageCount) { index ->
-            val isSelected: Boolean = index == currentPage
+            val isSelected = index == currentPage
+            val width by animateDpAsState(
+                targetValue = if (isSelected) 24.dp else 6.dp,
+                animationSpec = tween(250),
+                label = "dot_width"
+            )
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .height(8.dp)
-                    .width(if (isSelected) 24.dp else 8.dp)
+                    .height(6.dp)
+                    .width(width)
                     .clip(CircleShape)
                     .background(
-                        if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                        }
+                        if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                     )
             )
         }

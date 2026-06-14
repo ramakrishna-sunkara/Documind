@@ -1,6 +1,7 @@
 package com.documind.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -16,7 +17,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.documind.app.ui.theme.DocumindGradients
 
 @Composable
 fun BrandLogo(
@@ -25,22 +25,23 @@ fun BrandLogo(
     iconSize: Dp = 40.dp,
     showShadow: Boolean = true
 ) {
+    val bgColor = MaterialTheme.colorScheme.primary
     Box(
         modifier = modifier
             .size(size)
             .then(
                 if (showShadow) {
                     Modifier.shadow(
-                        elevation = 12.dp,
+                        elevation = 8.dp,
                         shape = CircleShape,
-                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                        spotColor = bgColor.copy(alpha = 0.3f)
                     )
                 } else {
                     Modifier
                 }
             )
             .clip(CircleShape)
-            .background(brush = DocumindGradients.brand()),
+            .background(color = bgColor),
         contentAlignment = Alignment.Center
     ) {
         Icon(

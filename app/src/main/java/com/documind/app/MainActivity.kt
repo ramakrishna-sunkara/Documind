@@ -43,7 +43,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.documind.app.ui.components.GradientPrimaryButton
-import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.data.llm.ModelState
 import com.documind.app.data.analytics.CrashAnalytics
 import com.documind.app.data.update.InAppUpdateManager
@@ -246,14 +245,14 @@ private fun ChatRecoveryScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(brush = DocumindGradients.brand()),
+                .background(color = MaterialTheme.colorScheme.errorContainer),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.ErrorOutline,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onErrorContainer
             )
         }
         Spacer(modifier = Modifier.height(24.dp))

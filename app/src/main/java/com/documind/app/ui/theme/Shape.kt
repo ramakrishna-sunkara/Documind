@@ -5,13 +5,13 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 object DocumindDimens {
-    val CardRadius = 20.dp
-    val ChipRadius = 12.dp
-    val InputRadius = 24.dp
-    val DialogRadius = 20.dp
-    val ButtonRadius = 12.dp
-    val BadgeRadius = 24.dp
-    val BubbleRadius = 20.dp
+    val CardRadius = 14.dp
+    val ChipRadius = 8.dp
+    val InputRadius = 12.dp
+    val DialogRadius = 16.dp
+    val ButtonRadius = 10.dp
+    val BadgeRadius = 20.dp
+    val BubbleRadius = 16.dp
 }
 
 val DocumindShapes = Shapes(
@@ -19,5 +19,5 @@ val DocumindShapes = Shapes(
     small = RoundedCornerShape(DocumindDimens.ChipRadius),
     medium = RoundedCornerShape(DocumindDimens.CardRadius),
     large = RoundedCornerShape(DocumindDimens.InputRadius),
-    extraLarge = RoundedCornerShape(28.dp)
+    extraLarge = RoundedCornerShape(24.dp)
 )

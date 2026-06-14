@@ -32,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.documind.app.domain.model.ChatMessage
 import com.documind.app.ui.theme.DocumindDimens
-import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.ErrorRed
 import com.documind.app.ui.theme.OnDeviceBadge
 
@@ -73,15 +72,9 @@ fun MessageBubble(
                 if (isUser) {
                     Surface(
                         shape = shape,
-                        modifier = Modifier
-                            .clip(shape)
-                            .background(brush = DocumindGradients.userMessage())
+                        color = MaterialTheme.colorScheme.primary
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .background(brush = DocumindGradients.userMessage())
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
-                        ) {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Text(
                                 text = message.content,
                                 color = Color.White,

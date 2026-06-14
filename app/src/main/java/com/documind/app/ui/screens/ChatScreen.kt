@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.documind.app.domain.model.ChatMessage
@@ -61,7 +59,6 @@ import com.documind.app.ui.components.DocumentStatusBar
 import com.documind.app.ui.components.IndexingOverlay
 import com.documind.app.ui.components.MessageBubble
 import com.documind.app.ui.theme.DocumindDimens
-import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.DocumindScreenBackground
 import com.documind.app.ui.theme.OnDeviceBadge
 
@@ -342,16 +339,8 @@ private fun GradientSendButton(
             .size(48.dp)
             .clip(CircleShape)
             .background(
-                brush = if (enabled) {
-                    DocumindGradients.brand()
-                } else {
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    )
-                }
+                color = if (enabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant
             )
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
@@ -378,39 +367,21 @@ private fun EmptyStateContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 24.dp)
+            .padding(top = 48.dp, bottom = 16.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
     ) {
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(brush = DocumindGradients.brand()),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.QuestionAnswer,
-                contentDescription = null,
-                modifier = Modifier.size(38.dp),
-                tint = Color.White
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

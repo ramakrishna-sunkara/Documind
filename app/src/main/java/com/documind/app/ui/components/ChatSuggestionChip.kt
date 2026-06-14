@@ -1,5 +1,6 @@
 package com.documind.app.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -9,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.documind.app.ui.theme.DocumindDimens
 
 @Composable
 fun ChatSuggestionChip(
@@ -20,14 +20,18 @@ fun ChatSuggestionChip(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(DocumindDimens.ChipRadius),
+        shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = null
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+        ),
+        shadowElevation = 0.dp
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            style = MaterialTheme.typography.bodySmall.copy(
                 fontWeight = FontWeight.Medium
             ),
             color = MaterialTheme.colorScheme.onSurface

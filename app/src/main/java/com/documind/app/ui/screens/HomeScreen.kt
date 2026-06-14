@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,7 +69,6 @@ import com.documind.app.ui.components.SourceCardItem
 import com.documind.app.ui.components.SourceListSection
 import com.documind.app.ui.theme.AiReadyGreen
 import com.documind.app.ui.theme.DocumindDimens
-import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.SuccessGreen
 import com.documind.app.ui.theme.WarningAmber
 import com.documind.app.ui.theme.privacyNoteBackground
@@ -333,7 +333,10 @@ private fun DemoCard(onClick: () -> Unit) {
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
         shape = RoundedCornerShape(DocumindDimens.CardRadius),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
+        border = BorderStroke(
+            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+        ),
         shadowElevation = 0.dp,
         tonalElevation = 0.dp
     ) {
@@ -342,12 +345,12 @@ private fun DemoCard(onClick: () -> Unit) {
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {
-            // Gradient left accent bar
+            // Primary accent bar
             Box(
                 modifier = Modifier
                     .width(4.dp)
                     .fillMaxHeight()
-                    .background(brush = DocumindGradients.brand())
+                    .background(color = MaterialTheme.colorScheme.primary)
             )
             Column(
                 modifier = Modifier

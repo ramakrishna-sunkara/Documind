@@ -54,13 +54,13 @@ private val LightColorScheme = lightColorScheme(
     onTertiary = Color.White,
     tertiaryContainer = Color(0xFFD1FAE5),
     onTertiaryContainer = Color(0xFF065F46),
-    background = SurfaceLight,
+    background = Color(0xFFEEF2F7),
     onBackground = TextPrimaryLight,
-    surface = SurfaceLight,
+    surface = Color(0xFFFFFFFF),
     onSurface = TextPrimaryLight,
-    surfaceContainer = SurfaceContainerLight,
-    surfaceContainerHigh = SurfaceElevatedLight,
-    surfaceVariant = SurfaceMutedLight,
+    surfaceContainer = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFF8FAFC),
+    surfaceVariant = Color(0xFFF1F5F9),
     onSurfaceVariant = TextSecondaryLight,
     outline = Color(0xFFCBD5E1),
     outlineVariant = Color(0xFFE2E8F0),
@@ -80,12 +80,7 @@ fun DocumindTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            val statusBarColor = if (darkTheme) {
-                BackgroundGradientTopDark
-            } else {
-                BackgroundGradientTop
-            }
-            window.statusBarColor = statusBarColor.toArgb()
+            window.statusBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }

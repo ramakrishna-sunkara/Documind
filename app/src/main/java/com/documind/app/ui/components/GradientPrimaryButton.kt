@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.documind.app.ui.theme.DocumindDimens
-import com.documind.app.ui.theme.DocumindGradients
 
 @Composable
 fun GradientPrimaryButton(
@@ -29,27 +28,18 @@ fun GradientPrimaryButton(
     enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val bgColor = if (enabled) MaterialTheme.colorScheme.primary
+                  else MaterialTheme.colorScheme.surfaceVariant
     Box(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = if (enabled) 4.dp else 0.dp,
+                elevation = if (enabled) 2.dp else 0.dp,
                 shape = RoundedCornerShape(DocumindDimens.ButtonRadius),
-                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             )
             .clip(RoundedCornerShape(DocumindDimens.ButtonRadius))
-            .background(
-                brush = if (enabled) {
-                    DocumindGradients.brandHorizontal()
-                } else {
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    )
-                }
-            )
+            .background(color = bgColor)
             .clickable(
                 enabled = enabled,
                 interactionSource = interactionSource,

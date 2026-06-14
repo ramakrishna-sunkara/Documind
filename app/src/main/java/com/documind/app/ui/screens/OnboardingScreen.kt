@@ -45,7 +45,6 @@ import com.documind.app.ui.components.DocumindLottieAsset
 import com.documind.app.ui.components.ErrorDialog
 import com.documind.app.ui.components.GradientPrimaryButton
 import com.documind.app.ui.theme.DocumindDimens
-import com.documind.app.ui.theme.DocumindGradients
 import com.documind.app.ui.theme.DocumindScreenBackground
 import com.documind.app.ui.theme.ErrorRed
 import com.documind.app.ui.theme.OnDeviceBadge

@@ -12,9 +12,18 @@ An Android app that lets you chat with your documents using on-device AI. All pr
 
 ## Screenshots
 
-| Home | Chat | Download |
-|------|------|----------|
-| Select document source | Ask questions about your document | Model downloads in background |
+| Onboarding | Home | Paste text |
+|------------|------|------------|
+| ![Onboarding — Privacy First](docs/screenshots/01-onboarding-privacy.jpg) | ![Home — AI Ready](docs/screenshots/02-home-ready.jpeg) | ![Paste text import](docs/screenshots/03-home-paste-text.jpeg) |
+
+| Indexing (on-device) | Chat Q&A |
+|----------------------|----------|
+| ![Preparing on-device AI](docs/screenshots/04-chat-indexing.jpeg) | ![Ask key points — on-device answer](docs/screenshots/05-chat-qa.jpeg) |
+
+## Demo video
+
+![Documind Video Demo](docs/screenshots/Documind-demo-60sec.mp4)
+
 
 ## Tech Stack
 

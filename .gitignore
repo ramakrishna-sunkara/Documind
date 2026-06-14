@@ -67,6 +67,11 @@ fastlane/screenshots
 fastlane/test_output
 fastlane/readme.md
 
+# Local demo screen recordings (large — keep screenshots in docs/screenshots/)
+screens/*.mp4
+screens/*.mov
+screens/.DS_Store
+
 # Version control
 vcs.xml
 
